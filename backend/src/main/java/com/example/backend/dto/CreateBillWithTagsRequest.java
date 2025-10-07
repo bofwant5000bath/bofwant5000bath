@@ -1,0 +1,35 @@
+package com.example.backend.dto;
+
+import com.example.backend.model.SplitMethod;  // ✅ ใช้ enum ไฟล์แยก
+import lombok.Getter;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Getter
+@Setter
+public class CreateBillWithTagsRequest {
+    private Integer groupId;
+    private String title;
+    private String description;
+    private BigDecimal amount;
+    private Integer paidByUserId;
+    private SplitMethod splitMethod;
+    private List<TagSplitDto> tags;
+
+    @Getter
+    @Setter
+    public static class TagSplitDto {
+        private String tagName;
+        private BigDecimal tagAmount;
+        private List<ParticipantSplitDto> participants;
+    }
+
+    @Getter
+    @Setter
+    public static class ParticipantSplitDto {
+        private Integer userId;
+        private BigDecimal amount;
+    }
+}
