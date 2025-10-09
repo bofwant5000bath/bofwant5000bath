@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
@@ -11,6 +11,9 @@ const CreateGroup = () => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const currentUserId = localStorage.getItem('user_id');
+
+  // 🔹 ตัวแปร flag กันการกดรัว ๆ
+  const isSubmitting = useRef(false);
 
   useEffect(() => {
     const fetchAllUsers = async () => {
@@ -46,6 +49,11 @@ const CreateGroup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🧠 ป้องกันการกดซ้ำ
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
+
     setLoading(true);
     setError('');
     setSuccess('');
@@ -53,6 +61,7 @@ const CreateGroup = () => {
     if (selectedUsers.length < 2) {
       setError('กลุ่มต้องมีสมาชิกอย่างน้อย 2 คน');
       setLoading(false);
+      isSubmitting.current = false;
       return;
     }
 
@@ -65,12 +74,16 @@ const CreateGroup = () => {
 
       await axios.post('http://localhost:8080/api/groups/create', payload);
       setSuccess('สร้างกลุ่มสำเร็จ!');
+      
+      // ✅ ป้องกันกดซ้ำในช่วงรอ redirect
       setTimeout(() => {
+        isSubmitting.current = false;
         navigate('/dashboard');
-      }, 1500);
+      }, 1200);
     } catch (err) {
       setError('เกิดข้อผิดพลาดในการสร้างกลุ่ม โปรดลองอีกครั้ง');
       console.error('Error creating group:', err);
+      isSubmitting.current = false;
     } finally {
       setLoading(false);
     }
@@ -116,7 +129,7 @@ const CreateGroup = () => {
         {selectedUsers.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-2">เพื่อนที่เลือก</h3>
-            <div className="flex gap-4">
+            <div className="flex gap-4 flex-wrap">
               {allUsers
                 .filter(user => selectedUsers.includes(user.userId))
                 .map(user => (
@@ -172,7 +185,9 @@ const CreateGroup = () => {
         <div className="mt-auto">
           <button
             type="submit"
-            className={`w-full py-3 rounded-md text-white font-bold ${loading ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'}`}
+            className={`w-full py-3 rounded-md text-white font-bold ${
+              loading ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'
+            }`}
             disabled={loading || !groupName || selectedUsers.length < 2}
           >
             {loading ? 'กำลังสร้าง...' : 'เสร็จสิ้น'}

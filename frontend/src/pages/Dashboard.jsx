@@ -8,22 +8,35 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const formatCurrency = (amount) => {
+    if (amount == null || isNaN(amount)) return "0.00";
+    return amount.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         const userId = localStorage.getItem("user_id");
-        if (!userId) {
-          throw new Error("User not logged in.");
-        }
+        if (!userId) throw new Error("User not logged in.");
 
         const response = await axios.get(
           `http://localhost:8080/api/groups/dashboard/${userId}`
         );
         setDashboardData(response.data);
+
+        if (response.data.fullName) {
+          localStorage.setItem("full_name", response.data.fullName);
+        }
+        if (response.data.profilePictureUrl) {
+          localStorage.setItem(
+            "profile_picture_url",
+            response.data.profilePictureUrl
+          );
+        }
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
-        setError("Failed to fetch dashboard data. Please try again.");
+        setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
         if (err.response && err.response.status === 401) {
           navigate("/login");
         }
@@ -47,15 +60,14 @@ const Dashboard = () => {
     localStorage.getItem("profile_picture_url") ||
     "https://via.placeholder.com/150";
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 font-sarabun">
         <p>กำลังโหลด...</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 font-sarabun">
         <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-lg text-center text-red-500">
@@ -63,15 +75,13 @@ const Dashboard = () => {
         </div>
       </div>
     );
-  }
 
-  if (!dashboardData) {
+  if (!dashboardData)
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 font-sarabun">
         <p>ยังไม่มีข้อมูล โปรดสร้างกลุ่มและบิล</p>
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sarabun">
@@ -86,11 +96,10 @@ const Dashboard = () => {
           <div>
             <h2 className="font-bold text-lg">{userName}</h2>
             <p className="text-sm text-red-500">
-              ยอดรวมที่ต้องชำระ: ฿{dashboardData.totalOwed?.toFixed(2) || "0.00"}
+              ยอดรวมที่ต้องชำระ: ฿{formatCurrency(dashboardData.totalOwed)}
             </p>
             <p className="text-sm text-green-600">
-              ยอดรวมที่จะได้รับ: ฿
-              {dashboardData.totalReceivable?.toFixed(2) || "0.00"}
+              ยอดรวมที่จะได้รับ: ฿{formatCurrency(dashboardData.totalReceivable)}
             </p>
           </div>
         </div>
@@ -146,23 +155,21 @@ const Dashboard = () => {
           {dashboardData.groups.map((group) => (
             <div
               key={group.groupId}
-              className="bg-white rounded-xl shadow p-5 border"
+              onClick={() => navigate(`/bill/${group.groupId}`)}
+              className="bg-white rounded-xl shadow p-5 border cursor-pointer hover:shadow-lg transition"
             >
               <div className="flex justify-between items-center mb-2">
                 <h2 className="font-semibold text-lg">{group.groupName}</h2>
-                <p className="text-sm text-gray-500">
-                  {group.memberCount} สมาชิก
-                </p>
+                <p className="text-sm text-gray-500">{group.memberCount} สมาชิก</p>
               </div>
               <p className="font-bold text-gray-800 text-lg mb-2">
-                ยอดรวมกลุ่ม ฿{group.totalAmount?.toFixed(2) || "0.00"}
+                ยอดรวมกลุ่ม ฿{formatCurrency(group.groupTotalAmount)}
               </p>
               <p className="text-sm text-red-500">
-                คุณเป็นหนี้: ฿{group.amountYouOwe?.toFixed(2) || "0.00"}
+                คุณเป็นหนี้: ฿{formatCurrency(group.myDebt)}
               </p>
               <p className="text-sm text-green-600">
-                คนอื่นเป็นหนี้คุณ: ฿
-                {group.amountOwedToYou?.toFixed(2) || "0.00"}
+                คนอื่นเป็นหนี้คุณ: ฿{formatCurrency(group.othersDebtToMe)}
               </p>
             </div>
           ))}

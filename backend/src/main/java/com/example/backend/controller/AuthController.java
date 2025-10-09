@@ -24,32 +24,37 @@ public class AuthController {
         String password = payload.get("password");
 
         return userService.login(username, password)
-                .map(user -> ResponseEntity.ok(Map.of(
-                        "message", "Login successful",
-                        "user_id", user.getUserId(),
-                        "username", user.getUsername(),
-                        "full_name", user.getFullName()
-                )))
+                .map(user -> {
+                    Map<String, Object> response = new java.util.HashMap<>();
+                    response.put("message", "Login successful");
+                    response.put("user_id", user.getUserId());
+                    response.put("username", user.getUsername());
+                    response.put("full_name", user.getFullName());
+                    response.put("profile_picture_url", user.getProfilePictureUrl()); // ✅ ยอมให้ null ได้
+                    return ResponseEntity.ok(response);
+                })
                 .orElse(ResponseEntity.status(401).body(Map.of("message", "Invalid credentials")));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestParam("full_name") String fullName,
-                                           @RequestParam("username") String username,
-                                           @RequestParam("password") String password,
-                                           @RequestParam(value = "picture", required = false) MultipartFile picture) {
+    public ResponseEntity<?> register(@RequestBody User userRequest) {
         try {
-            // ในโปรเจกต์จริงควรมีการจัดการไฟล์อัปโหลดอย่างเหมาะสม เช่น บันทึกไฟล์ลงใน cloud storage
-            String profilePictureUrl = (picture != null) ? "URL_TO_UPLOADED_PICTURE" : null;
+            // ดึงค่าจาก body
+            String username = userRequest.getUsername();
+            String password = userRequest.getPassword();
+            String fullName = userRequest.getFullName();
+            String profilePictureUrl = userRequest.getProfilePictureUrl();
 
             userService.registerNewUser(username, password, fullName, profilePictureUrl);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body("การลงทะเบียนสำเร็จ");
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(Map.of("message", "การลงทะเบียนสำเร็จ"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("เกิดข้อผิดพลาดในการลงทะเบียน");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "เกิดข้อผิดพลาดในการลงทะเบียน"));
         }
     }
 }

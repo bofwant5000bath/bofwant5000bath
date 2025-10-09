@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom'; // เพิ่ม useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -13,7 +13,7 @@ const Register = () => {
   const [success, setSuccess] = useState('');
 
   const fileInputRef = useRef(null);
-  const navigate = useNavigate(); // ใช้ navigate
+  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -31,27 +31,48 @@ const Register = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('full_name', name);
-    formData.append('username', username);
-    formData.append('password', password);
-    if (picture) {
-      formData.append('picture', picture);
-    }
-
     try {
+      let pictureUrl = '';
+
+      // ✅ อัปโหลดรูปไป imgbb
+      if (picture) {
+        const data = new FormData();
+        data.append('image', picture);
+
+        const res = await fetch(
+          'https://api.imgbb.com/1/upload?key=c8828a8f5e3ca1309d22a2672d99bfe2',
+          { method: 'POST', body: data }
+        );
+
+        const result = await res.json();
+        if (result.success && result.data?.url) {
+          pictureUrl = result.data.url;
+          console.log('✅ URL รูปที่อัปโหลด:', pictureUrl);
+        } else {
+          console.warn('⚠️ ไม่ได้ URL จาก imgbb:', result);
+        }
+      }
+
+      // ✅ ส่งข้อมูลเป็น JSON ให้ backend
+      const payload = {
+        username: username,
+        password: password,
+        fullName: name,
+        profilePictureUrl: pictureUrl || '',
+      };
+
       const response = await axios.post(
         'http://localhost:8080/api/auth/register',
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        payload,
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
+
       setSuccess(response.data.message);
       setError('');
-      console.log('การลงทะเบียนสำเร็จ:', response.data);
-
-      // ✅ เปลี่ยนหน้าไป Login หลังจากสมัครสำเร็จ
+      console.log('🎉 การลงทะเบียนสำเร็จ:', response.data);
       navigate('/login');
-
     } catch (err) {
       setError(err.response?.data?.message || 'เกิดข้อผิดพลาดในการลงทะเบียน');
       setSuccess('');
@@ -67,6 +88,7 @@ const Register = () => {
         </h1>
 
         <form onSubmit={handleSubmit}>
+          {/* ส่วนเลือกรูปโปรไฟล์ */}
           <div className="flex flex-col items-center mb-6">
             <div
               className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center mb-3 overflow-hidden cursor-pointer"
@@ -99,6 +121,7 @@ const Register = () => {
             />
           </div>
 
+          {/* ชื่อ-นามสกุล */}
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -118,10 +141,12 @@ const Register = () => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
               />
             </div>
           </div>
 
+          {/* ชื่อผู้ใช้ */}
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -146,6 +171,7 @@ const Register = () => {
             </div>
           </div>
 
+          {/* รหัสผ่าน */}
           <div className="mb-4">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
@@ -170,6 +196,7 @@ const Register = () => {
             </div>
           </div>
 
+          {/* ยืนยันรหัสผ่าน */}
           <div className="mb-6">
             <label
               className="block text-gray-700 text-sm font-bold mb-2"
