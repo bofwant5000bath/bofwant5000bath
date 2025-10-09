@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- เพิ่มข้อมูลตัวอย่างสำหรับตาราง users
 INSERT INTO `users` (`username`, `password`, `full_name`) VALUES
-('keatikun', 'password_1', 'keatikun'),
+('keatikun', 'password_1', 'อิอ๋อง'),
 ('pornpawee', 'password_2', 'pornpawee'),
 ('sutarnthip', 'password_3', 'sutarnthip'),
 ('kan', 'password_4', 'kan');
