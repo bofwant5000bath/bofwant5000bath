@@ -8,7 +8,7 @@ const Bill = () => {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [summary, setSummary] = useState({ totalAmount: 0, userNetBalance: 0 });
+  const [summary, setSummary] = useState({ totalAmount: 0 });
 
   const currentUserId = parseInt(localStorage.getItem("user_id") || "1");
 
@@ -29,46 +29,48 @@ const Bill = () => {
     });
   };
 
+  // ✅ โหลดข้อมูลบิลจาก backend
   useEffect(() => {
     const fetchBills = async () => {
       try {
-        const res = await axios.get(
+        setLoading(true);
+        setError(null);
+
+        const billRes = await axios.get(
           `http://localhost:8080/api/bills/group/${groupId}`
         );
-        console.log("✅ ข้อมูลบิล:", res.data);
-        setBills(res.data);
 
-        // คำนวณยอดรวม
-        let totalAmount = 0;
-        let userTotalPaid = 0;
-        let userTotalShare = 0;
+        console.log("✅ ข้อมูลจาก backend:", billRes.data);
 
-        res.data.forEach((billDetail) => {
-          totalAmount += billDetail.amount || 0;
-          if (billDetail.paidByUser?.userId === currentUserId) {
-            userTotalPaid += billDetail.amount || 0;
-          }
-          billDetail.participants?.forEach((p) => {
-            if (p.user?.userId === currentUserId) {
-              userTotalShare += p.splitAmount || 0;
-            }
-          });
-        });
+        const { groupMembers, bills } = billRes.data;
 
-        setSummary({
-          totalAmount,
-          userNetBalance: userTotalShare - userTotalPaid,
-        });
+        if (!Array.isArray(bills)) {
+          throw new Error("ข้อมูล bills ไม่ถูกต้องจาก backend");
+        }
+
+        setBills(bills);
+
+        if (groupMembers) {
+          localStorage.setItem("groupMembers", JSON.stringify(groupMembers));
+        }
+
+        const totalAmount = bills.reduce(
+          (sum, bill) => sum + (bill.amount || 0),
+          0
+        );
+        setSummary({ totalAmount });
       } catch (err) {
-        console.error("❌ โหลดบิลล้มเหลว:", err);
+        console.error("❌ โหลดข้อมูลบิลล้มเหลว:", err);
         setError("ไม่สามารถโหลดข้อมูลบิลได้");
       } finally {
         setLoading(false);
       }
     };
-    fetchBills();
-  }, [groupId, currentUserId]);
 
+    fetchBills();
+  }, [groupId]);
+
+  // ✅ UI เดิมทั้งหมด (ไม่แตะ layout)
   if (loading)
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100 font-sarabun">
@@ -86,7 +88,10 @@ const Bill = () => {
   const groupName = bills[0]?.group?.groupName || "กลุ่มของฉัน";
   const memberCount = new Set(
     bills.flatMap(
-      (b) => [b.paidByUser?.userId, ...(b.participants || []).map((p) => p.user.userId)]
+      (b) => [
+        b.paidByUser?.userId,
+        ...(b.participants || []).map((p) => p.user.userId),
+      ]
     )
   ).size;
 
@@ -102,7 +107,9 @@ const Bill = () => {
             <span className="material-icons text-gray-600">arrow_back</span>
           </button>
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-gray-800">{groupName}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-800">
+              {groupName}
+            </h1>
             <p className="text-sm text-gray-500">{memberCount} สมาชิก</p>
           </div>
         </div>
@@ -120,14 +127,13 @@ const Bill = () => {
           </div>
         </div>
 
-        {/* Title + Add Button */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800">
-            รายการค่าใช้จ่าย
-          </h2>
-          <button className="flex items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium shadow">
-            <span className="material-icons text-white mr-1">add</span>
-            เพิ่มค่าใช้จ่าย
+        {/* Add Expense Button */}
+        <div className="flex justify-end px-6 mt-4">
+          <button
+            onClick={() => navigate(`/addexpense/${groupId}`)} // ✅ ไปหน้า AddExpenseUnified
+            className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow"
+          >
+            + เพิ่มค่าใช้จ่าย
           </button>
         </div>
 
@@ -136,9 +142,9 @@ const Bill = () => {
           {bills.map((bill) => (
             <div
               key={bill.billId}
-              className="bg-white rounded-xl shadow-sm p-5 border border-gray-100"
+              onClick={() => navigate(`/bill/${groupId}/payment/${bill.billId}`)}
+              className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:bg-gray-50 cursor-pointer transition"
             >
-              {/* Bill Header */}
               <div className="flex justify-between items-center mb-1">
                 <div>
                   <h3 className="font-bold text-gray-800 text-base sm:text-lg">
@@ -155,17 +161,16 @@ const Bill = () => {
                   <p className="font-bold text-lg sm:text-xl text-gray-900">
                     {formatCurrency(bill.amount)}
                   </p>
-                  <p className="text-xs text-gray-400">{formatDate(bill.billDate)}</p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(bill.billDate)}
+                  </p>
                 </div>
               </div>
 
-              {/* Participants */}
+              {/* ✅ Participant Section */}
               <div className="mt-4 pt-3 border-t border-gray-200 space-y-2 text-sm">
                 {bill.participants?.map((p, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center"
-                  >
+                  <div key={index} className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <img
                         src={
@@ -182,14 +187,22 @@ const Bill = () => {
                           : bill.paidByUser?.fullName}
                       </p>
                     </div>
+
+                    {/* ✅ สีตามสถานะ */}
                     <p
-                      className={`font-semibold ${
-                        bill.paidByUser?.userId === currentUserId
+                      className={`font-semibold ${p.status === "paid"
                           ? "text-green-500"
-                          : "text-red-500"
-                      }`}
+                          : p.status === "partial"
+                            ? "text-yellow-500"
+                            : "text-red-500"
+                        }`}
                     >
-                      {formatCurrency(p.splitAmount)}
+                      {formatCurrency(p.splitAmount)}{" "}
+                      {p.status === "paid"
+                        ? "(ชำระแล้ว)"
+                        : p.status === "partial"
+                          ? "(ค้างบางส่วน)"
+                          : "(ยังไม่ชำระ)"}
                     </p>
                   </div>
                 ))}
