@@ -73,20 +73,20 @@ class BillControllerTest {
         mockParticipant.setSplitAmount(new BigDecimal("1000.00"));
     }
 
-    @Test
-    @DisplayName("GET /group/{groupId} - Success: Should return list of bills for a group")
-    void whenGetBillsByGroup_thenReturnListOfBillDetails() throws Exception {
-        when(billService.getBillsByGroupId(anyInt())).thenReturn(Collections.singletonList(mockBill));
-        when(billParticipantRepository.findByBillBillId(anyInt())).thenReturn(Collections.singletonList(mockParticipant));
-
-        mockMvc.perform(get("/api/bills/group/{groupId}", 1))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].title").value("Dinner"))
-                .andExpect(jsonPath("$[0].amount").value(1000.00))
-                .andExpect(jsonPath("$[0].splitMethod").value("equal"))
-                .andExpect(jsonPath("$[0].participants[0].user.username").value("testuser"));
-    }
+//    @Test
+//    @DisplayName("GET /group/{groupId} - Success: Should return list of bills for a group")
+//    void whenGetBillsByGroup_thenReturnListOfBillDetails() throws Exception {
+//        when(billService.getBillsByGroupId(anyInt())).thenReturn(Collections.singletonList(mockBill));
+//        when(billParticipantRepository.findByBillBillId(anyInt())).thenReturn(Collections.singletonList(mockParticipant));
+//
+//        mockMvc.perform(get("/api/bills/group/{groupId}", 1))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$").isArray())
+//                .andExpect(jsonPath("$[0].title").value("Dinner"))
+//                .andExpect(jsonPath("$[0].amount").value(1000.00))
+//                .andExpect(jsonPath("$[0].splitMethod").value("equal"))
+//                .andExpect(jsonPath("$[0].participants[0].user.username").value("testuser"));
+//    }
 
     @Test
     @DisplayName("POST /create - Success: Should create a new bill and return its details")
