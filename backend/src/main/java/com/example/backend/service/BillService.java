@@ -42,6 +42,10 @@ public class BillService {
         return billRepository.findByGroupGroupId(groupId);
     }
 
+    public List<User> getGroupMembers(Integer groupId) {
+        return groupRepository.findUsersByGroupId(groupId);
+    }
+
     @Transactional
     public Bill createBill(CreateBillRequest request) {
         Optional<Group> groupOptional = groupRepository.findById(request.getGroupId());
