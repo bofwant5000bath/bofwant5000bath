@@ -13,11 +13,16 @@ CREATE TABLE IF NOT EXISTS `users` (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- เพิ่มข้อมูลตัวอย่างสำหรับตาราง users
-INSERT INTO `users` (`username`, `password`, `full_name`) VALUES
-('keatikun', 'password_1', 'อิอ๋อง'),
-('pornpawee', 'password_2', 'pornpawee'),
-('sutarnthip', 'password_3', 'sutarnthip'),
-('kan', 'password_4', 'kan');
+-- INSERT INTO `users` (`username`, `password`, `full_name`) VALUES
+-- ('keatikun', 'password_1', 'อิอ๋อง'),
+-- ('pornpawee', 'password_2', 'pornpawee'),
+-- ('sutarnthip', 'password_3', 'sutarnthip'),
+-- ('kan', 'password_4', 'kan');
+INSERT INTO `users` (`username`, `password`, `full_name`, `profile_picture_url`) VALUES
+('Rengoku', 'password_1', 'เคียวจูโร่ เรนโงคุ', 'https://fbi.dek-d.com/27/0825/5697/130438191?v=7.02'),
+('Tomioka', 'password_2', 'กิยู โทมิโอกะ', 'https://hinaboshi.com/rup/rupprakopwalidet/2649902718361816.jpg'),
+('Kamado', 'password_3', 'ทันจิโร่ คามาโดะ', 'https://cdn-th.tunwalai.net/files/story/570050/637619372453962081-story.jpg'),
+('Agatsuma', 'password_4', 'เซนิตสึ อากัทสึมะ', 'https://fbi.dek-d.com/27/0902/9177/131649897?v=7.02');
 
 -- 2. ตารางกลุ่ม (groups)
 CREATE TABLE IF NOT EXISTS `groups_` (
@@ -28,6 +33,12 @@ CREATE TABLE IF NOT EXISTS `groups_` (
   FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`user_id`)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- เพิ่มข้อมูลตัวอย่างสำหรับตาราง groups
+INSERT INTO `groups_` (`group_name`, `created_by_user_id`) VALUES
+('ทริปเที่ยวทะเล', 1), 
+('ค่าห้องเดือนนี้', 2);
+
+
 -- 3. ตารางสมาชิกในกลุ่ม (group_members)
 CREATE TABLE IF NOT EXISTS `group_members` (
   `group_id` INT NOT NULL,
@@ -36,6 +47,19 @@ CREATE TABLE IF NOT EXISTS `group_members` (
   FOREIGN KEY (`group_id`) REFERENCES `groups_`(`group_id`),
   FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`)
 );
+
+-- เพิ่มข้อมูลตัวอย่างสำหรับตาราง group_members
+-- สมาชิกกลุ่ม "ทริปเที่ยวทะเล" (group_id 1)
+INSERT INTO `group_members` (`group_id`, `user_id`) VALUES
+(1, 1), -- เกียรติกุล
+(1, 2), -- พรพวีร์
+(1, 3); -- สุฑาณทิพย์
+
+-- สมาชิกกลุ่ม "ค่าห้องเดือนนี้" (group_id 2)
+INSERT INTO `group_members` (`group_id`, `user_id`) VALUES
+(2, 1), -- เกียรติกุล
+(2, 2), -- พรพวีร์
+(2, 4); -- กานต์
 
 -- 4. ตารางบิล (bills)
 CREATE TABLE IF NOT EXISTS `bills` (
