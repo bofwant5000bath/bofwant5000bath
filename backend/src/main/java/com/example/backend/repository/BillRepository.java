@@ -15,4 +15,7 @@ public interface BillRepository extends JpaRepository<Bill, Integer> {
 
     @Query("SELECT COALESCE(SUM(b.amount), 0) FROM Bill b WHERE b.group.groupId = :groupId")
     BigDecimal sumAmountByGroupId(@Param("groupId") Integer groupId);
+
+    // ดึงบิลทั้งหมดในกลุ่มที่จ่ายโดย user คนหนึ่ง
+    List<Bill> findByGroupGroupIdAndPaidByUserUserId(Integer groupId, Integer userId);
 }

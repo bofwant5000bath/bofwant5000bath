@@ -162,8 +162,13 @@ const AddExpenseUnified = () => {
   const validateBeforeSave = () => {
     const totalAmount = parseFloat(amount);
 
+    if (!description.trim()) {
+      alert("กรุณากรอกคำอธิบาย");
+      return false;
+    }
+
     if (totalAmount <= 0) {
-      alert("กรุณากรอกจำนวนเงินรวมให้ถูกต้อง");
+      alert("กรุณากรอกจำนวนเงินรวมให้ถูกต้อง (ต้องมากกว่า 0)");
       return false;
     }
 
@@ -176,6 +181,12 @@ const AddExpenseUnified = () => {
     }
 
     if (splitMethod === "custom") {
+      for (const p of customParticipants) {
+        if (p.isChecked && parseFloat(p.share) <= 0) {
+          alert(`กรุณากรอกจำนวนเงินของ '${p.name}' ให้มากกว่า 0`);
+          return false;
+        }
+      }
       const totalCustom = getCustomTotal();
       if (totalCustom <= 0) {
         alert("กรุณากรอกจำนวนเงินของแต่ละคนให้ถูกต้อง");
@@ -185,15 +196,48 @@ const AddExpenseUnified = () => {
         alert(
           `ยอดรวมของแต่ละคน (${formatCurrency(
             totalCustom
-          )}) ไม่ตรงกับยอดรวมทั้งหมด (${formatCurrency(
-            totalAmount
-          )})`
+          )}) ไม่ตรงกับยอดรวมทั้งหมด (${formatCurrency(totalAmount)})`
         );
         return false;
       }
     }
 
     if (splitMethod === "tags") {
+      for (const tag of tags) {
+        if (!tag.name.trim()) {
+          alert("กรุณาตั้งชื่อแท็กทั้งหมด");
+          return false;
+        }
+        
+        let memberShareTotal = 0;
+        for (const member of tag.members) {
+          if (member.isChecked) {
+            const memberShare = parseFloat(member.share) || 0;
+            if (memberShare <= 0) {
+              alert(
+                `ในแท็ก '${tag.name}', กรุณากรอกจำนวนเงินของ '${
+                  member.name
+                }' ให้มากกว่า 0`
+              );
+              return false;
+            }
+            memberShareTotal += memberShare;
+          }
+        }
+
+        // ✅ START: เพิ่มโค้ดส่วนตรวจสอบยอดรวมในแต่ละแท็ก
+        const tagTotal = parseFloat(tag.amount) || 0;
+        if (tag.members.filter(m => m.isChecked).length > 0 && Math.abs(memberShareTotal - tagTotal) > 0.01) {
+          alert(
+            `ยอดรวมของผู้เข้าร่วมในแท็ก '${tag.name}' (${formatCurrency(
+              memberShareTotal
+            )}) ไม่ตรงกับยอดรวมของแท็ก (${formatCurrency(tagTotal)})`
+          );
+          return false;
+        }
+        // ✅ END: เพิ่มโค้ดส่วนตรวจสอบ
+      }
+
       const totalTags = getTagsTotal();
       if (totalTags <= 0) {
         alert("กรุณากรอกจำนวนเงินในแต่ละแท็กให้ถูกต้อง");
@@ -203,9 +247,7 @@ const AddExpenseUnified = () => {
         alert(
           `ยอดรวมของแต่ละแท็ก (${formatCurrency(
             totalTags
-          )}) ไม่ตรงกับยอดรวมทั้งหมด (${formatCurrency(
-            totalAmount
-          )})`
+          )}) ไม่ตรงกับยอดรวมทั้งหมด (${formatCurrency(totalAmount)})`
         );
         return false;
       }
@@ -219,7 +261,7 @@ const AddExpenseUnified = () => {
     let payload = {
       groupId: Number(groupId),
       title: description,
-      description: "เพิ่มจากหน้าเว็บ",
+      description: description,
       amount: parseFloat(amount),
       paidByUserId: Number(payerId),
       splitMethod:
@@ -522,6 +564,7 @@ const AddExpenseUnified = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 rounded-md"
+                required
               />
             </div>
 

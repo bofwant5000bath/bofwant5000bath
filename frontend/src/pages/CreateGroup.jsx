@@ -12,7 +12,9 @@ const CreateGroup = () => {
   const navigate = useNavigate();
   const currentUserId = localStorage.getItem('user_id');
 
-  // 🔹 ตัวแปร flag กันการกดรัว ๆ
+  // ✅ 1. เพิ่ม State สำหรับเก็บค่าในช่องค้นหา
+  const [searchTerm, setSearchTerm] = useState('');
+
   const isSubmitting = useRef(false);
 
   useEffect(() => {
@@ -50,13 +52,20 @@ const CreateGroup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 🧠 ป้องกันการกดซ้ำ
     if (isSubmitting.current) return;
     isSubmitting.current = true;
 
     setLoading(true);
     setError('');
     setSuccess('');
+
+    // ✅ 2. เพิ่มการตรวจสอบว่าใส่ชื่อกลุ่มแล้วหรือยัง
+    if (!groupName.trim()) {
+      setError('กรุณาตั้งชื่อกลุ่ม');
+      setLoading(false);
+      isSubmitting.current = false;
+      return;
+    }
 
     if (selectedUsers.length < 2) {
       setError('กลุ่มต้องมีสมาชิกอย่างน้อย 2 คน');
@@ -75,7 +84,6 @@ const CreateGroup = () => {
       await axios.post('http://localhost:8080/api/groups/create', payload);
       setSuccess('สร้างกลุ่มสำเร็จ!');
       
-      // ✅ ป้องกันกดซ้ำในช่วงรอ redirect
       setTimeout(() => {
         isSubmitting.current = false;
         navigate('/dashboard');
@@ -89,9 +97,14 @@ const CreateGroup = () => {
     }
   };
 
+  // ✅ 3. สร้าง list ของ user ที่ผ่านการกรองจากช่องค้นหา
+  const filteredUsers = allUsers.filter(user =>
+    user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 font-sarabun">
-      {/* Header */}
+      {/* ... (ส่วน Header เหมือนเดิม) ... */}
       <div className="w-full max-w-2xl flex items-center p-4">
         <Link to="/dashboard" className="mr-4 text-gray-600 hover:underline">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -102,9 +115,16 @@ const CreateGroup = () => {
         <h2 className="text-xl font-bold">สร้างกลุ่มใหม่</h2>
       </div>
 
-      {/* Form */}
+
       <form onSubmit={handleSubmit} className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 flex flex-col flex-1">
         
+        {/* แสดงข้อความ Error */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
         {/* Group Name */}
         <div className="mb-4">
           <input
@@ -113,19 +133,23 @@ const CreateGroup = () => {
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required // เพิ่ม required เพื่อการ validation พื้นฐานของ browser
           />
         </div>
 
         {/* Search Bar */}
         <div className="mb-4">
+          {/* ✅ 4. เชื่อม State เข้ากับช่องค้นหา */}
           <input
             type="text"
             placeholder="ค้นหาชื่อเพื่อน"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        {/* Selected Friends */}
+        {/* ... (ส่วน Selected Friends เหมือนเดิม) ... */}
         {selectedUsers.length > 0 && (
           <div className="mb-6">
             <h3 className="font-semibold mb-2">เพื่อนที่เลือก</h3>
@@ -157,7 +181,8 @@ const CreateGroup = () => {
         <div className="flex-1 overflow-y-auto mb-6">
           <h3 className="font-semibold mb-2">เพื่อนทั้งหมด</h3>
           <div className="divide-y border rounded-md">
-            {allUsers.map(user => (
+            {/* ✅ 5. ใช้ list ที่ผ่านการกรองแล้วมาแสดงผล */}
+            {filteredUsers.map(user => (
               <label
                 key={user.userId}
                 className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-100"
@@ -186,9 +211,11 @@ const CreateGroup = () => {
           <button
             type="submit"
             className={`w-full py-3 rounded-md text-white font-bold ${
-              loading ? 'bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'
+              loading || !groupName.trim() || selectedUsers.length < 2
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600'
             }`}
-            disabled={loading || !groupName || selectedUsers.length < 2}
+            disabled={loading || !groupName.trim() || selectedUsers.length < 2}
           >
             {loading ? 'กำลังสร้าง...' : 'เสร็จสิ้น'}
           </button>

@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "bills")
@@ -43,5 +44,9 @@ public class Bill {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    // ✅ 2. เพิ่มส่วนนี้เข้าไปทั้งหมด
+    @OneToMany(mappedBy = "bill", fetch = FetchType.LAZY)
+    private List<BillParticipant> participants;
 }
 

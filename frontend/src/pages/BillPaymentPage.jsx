@@ -11,11 +11,13 @@ const BillPaymentPage = () => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // ⚙️ จำลอง user ปัจจุบัน (อาจเปลี่ยนเป็น token login ได้ในภายหลัง)
-  const currentUserId = 1;
+  
+  // ✅ แก้ไขตรงนี้: ดึง user id จาก localStorage
+  // ใช้ parseInt เพื่อแปลง string ที่ได้จาก localStorage ให้เป็น number สำหรับการเปรียบเทียบ
+  const currentUserId = parseInt(localStorage.getItem("user_id"));
 
   const formatCurrency = (amount) => {
+    // ... (ฟังก์ชันเดิม) ...
     return new Intl.NumberFormat("th-TH", {
       style: "currency",
       currency: "THB",
@@ -25,80 +27,100 @@ const BillPaymentPage = () => {
       .replace("฿", "฿");
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("th-TH", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  // ✅ โหลดข้อมูลจาก group endpoint แล้วหา billId ที่ตรงกัน
   useEffect(() => {
-    const fetchBill = async () => {
+    // ✅ เพิ่มการตรวจสอบว่ามี user_id หรือไม่
+    if (!currentUserId) {
+      alert("ไม่พบข้อมูลผู้ใช้, กรุณาเข้าสู่ระบบใหม่");
+      navigate('/login');
+      return;
+    }
+
+    const fetchBillAndPayments = async () => {
       try {
-        const res = await axios.get(
+        const groupRes = await axios.get(
           `http://localhost:8080/api/bills/group/${groupId}`
         );
-        const data = res.data;
-        const foundBill = data.bills?.find(
+        // ... (โค้ดส่วนที่เหลือใน useEffect เหมือนเดิมทั้งหมด) ...
+        const foundBill = groupRes.data.bills?.find(
           (b) => b.billId === parseInt(billId)
         );
 
         if (!foundBill) {
           throw new Error("ไม่พบบิลในกลุ่มนี้");
         }
-
         setBill(foundBill);
 
-        // หาผู้ใช้ปัจจุบัน
-        const foundUser = foundBill.participants?.find(
+        const paymentsRes = await axios.get(
+          `http://localhost:8080/api/payments/bill/${billId}`
+        );
+        const payments = paymentsRes.data;
+
+        const userParticipantInfo = foundBill.participants?.find(
           (p) => p.user?.userId === currentUserId
         );
 
-        if (foundUser) {
+        if (userParticipantInfo) {
+          const totalPaidByCurrentUser = payments
+            .filter((p) => p.payerUser.userId === currentUserId)
+            .reduce((sum, p) => sum + p.amount, 0);
+
           setCurrentUser({
-            id: foundUser.user.userId,
-            name: foundUser.user.fullName,
-            avatarUrl: foundUser.user.profilePictureUrl,
-            totalShare: foundUser.splitAmount,
-            amountPaid: foundUser.paidAmount || 0,
+            id: userParticipantInfo.user.userId,
+            name: userParticipantInfo.user.fullName,
+            avatarUrl: userParticipantInfo.user.profilePictureUrl,
+            totalShare: userParticipantInfo.splitAmount,
+            amountPaid: totalPaidByCurrentUser,
           });
 
           const remaining =
-            foundUser.splitAmount - (foundUser.paidAmount || 0);
+            userParticipantInfo.splitAmount - totalPaidByCurrentUser;
           setPaymentAmount(remaining > 0 ? remaining.toFixed(2) : "0.00");
         }
       } catch (err) {
-        console.error("❌ โหลดข้อมูลบิลล้มเหลว:", err);
-        alert("โหลดข้อมูลบิลไม่สำเร็จ กรุณาลองใหม่");
+        console.error("❌ โหลดข้อมูลบิลหรือการจ่ายเงินล้มเหลว:", err);
+        alert("โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBill();
-  }, [groupId, billId]);
+    fetchBillAndPayments();
+  }, [groupId, billId, currentUserId, navigate]); // เพิ่ม dependency เพื่อให้สอดคล้อง
 
-  // ✅ ฟังก์ชันบันทึกการชำระเงิน (แก้ endpoint + field)
+
+  // ... (โค้ดส่วนที่เหลือทั้งหมดเหมือนเดิม) ...
   const handleSavePayment = async () => {
-    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+    const enteredAmount = parseFloat(paymentAmount);
+    if (!enteredAmount || enteredAmount <= 0) {
       alert("กรุณาระบุจำนวนเงินที่ถูกต้องก่อนบันทึก");
       return;
+    }
+
+    const remainingAmount = currentUser.totalShare - currentUser.amountPaid;
+
+    if (enteredAmount > remainingAmount + 0.009) {
+      const overpaymentAmount = enteredAmount - remainingAmount;
+      const confirmationMessage = `คุณกำลังชำระเงินเกินจำนวนที่ต้องจ่ายเป็นเงิน ${formatCurrency(
+        overpaymentAmount
+      )}\n\nคุณต้องการยืนยันการทำรายการต่อหรือไม่?`;
+      
+      const isConfirmed = window.confirm(confirmationMessage);
+
+      if (!isConfirmed) {
+        return;
+      }
     }
 
     try {
       const payload = {
         billId: parseInt(billId),
-        payerUserId: currentUserId, // ✅ เปลี่ยนชื่อให้ตรง backend
-        amount: parseFloat(paymentAmount),
+        payerUserId: currentUserId,
+        amount: enteredAmount, 
       };
 
-      console.log("📤 ส่งข้อมูลไป backend:", payload);
+      await axios.post("http://localhost:8080/api/payments/create", payload);
 
-      await axios.post("http://localhost:8080/api/payments/create", payload); // ✅ endpoint ใหม่
-
-      alert(`✅ บันทึกการจ่ายเงินจำนวน ${formatCurrency(paymentAmount)} สำเร็จ`);
+      alert(`✅ บันทึกการจ่ายเงินจำนวน ${formatCurrency(enteredAmount)} สำเร็จ`);
       navigate(`/bill/${groupId}`);
     } catch (err) {
       console.error("❌ บันทึกการจ่ายเงินล้มเหลว:", err);
@@ -108,30 +130,34 @@ const BillPaymentPage = () => {
 
   if (loading) return <div className="text-center mt-10">กำลังโหลด...</div>;
   if (!bill || !currentUser)
-    return <div className="text-center mt-10 text-red-500">ไม่พบบิล</div>;
+    return <div className="text-center mt-10 text-red-500">ไม่พบบิล หรือคุณไม่ได้อยู่ในบิลนี้</div>;
 
   const remaining = currentUser.totalShare - currentUser.amountPaid;
   let statusText = "";
   let statusColor = "";
   let detailText = "";
 
-  if (remaining <= 0) {
-    statusText = "จ่ายแล้ว";
+  if (
+    currentUser.id === bill.paidByUser?.userId ||
+    remaining <= 0.009
+  ) {
+    statusText = "ชำระครบแล้ว";
     statusColor = "text-green-600";
     detailText = `จ่ายแล้ว ${formatCurrency(currentUser.totalShare)}`;
   } else if (currentUser.amountPaid > 0) {
     statusText = "ยังจ่ายไม่ครบ";
     statusColor = "text-yellow-600";
-    detailText = `ยังจ่ายไม่ครบ ${formatCurrency(remaining)}`;
+    detailText = `ยังค้างชำระ ${formatCurrency(remaining)}`;
   } else {
     statusText = "ยังไม่ได้จ่าย";
     statusColor = "text-red-500";
-    detailText = `เป็นหนี้ ${formatCurrency(currentUser.totalShare)}`;
+    detailText = `ยอดที่ต้องชำระ ${formatCurrency(currentUser.totalShare)}`;
   }
+
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
-      <header className="bg-white shadow-md p-4">
+        <header className="bg-white shadow-md p-4">
         <div className="container mx-auto flex items-center space-x-4">
           <button
             onClick={() => navigate(`/bill/${groupId}`)}
@@ -142,9 +168,8 @@ const BillPaymentPage = () => {
           <h1 className="text-xl font-bold text-gray-800">{bill.title}</h1>
         </div>
       </header>
-
       <main className="container mx-auto p-4">
-        <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
+      <div className="bg-white rounded-xl shadow-md p-6 space-y-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-2">
               รายละเอียดบิล
@@ -176,6 +201,7 @@ const BillPaymentPage = () => {
             </p>
           </div>
 
+
           <div className="border-t border-gray-100 pt-4">
             <h3 className="text-md font-semibold text-gray-800 mb-3">
               การชำระเงินของคุณ
@@ -183,29 +209,34 @@ const BillPaymentPage = () => {
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <p className="font-medium">{currentUser.name}</p>
-                <p className={`${statusColor}`}>{statusText}</p>
+                <p className={`${statusColor} font-semibold`}>{statusText}</p>
               </div>
               <p className={`text-sm ${statusColor}`}>{detailText}</p>
-              {remaining > 0 && (
-                <div className="mt-4">
-                  <input
-                    type="number"
-                    className="border rounded-md p-2 w-full text-right"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                  />
-                  <button
-                    onClick={handleSavePayment}
-                    className="mt-3 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-                  >
-                    บันทึกการชำระเงิน
-                  </button>
-                </div>
-              )}
+              
+              {currentUser.id !== bill.paidByUser?.userId &&
+                remaining > 0.009 && (
+                  <div className="mt-4">
+                    <label className="text-sm text-gray-600">
+                      ระบุจำนวนเงินที่ต้องการจ่าย:
+                    </label>
+                    <input
+                      type="number"
+                      className="border rounded-md p-2 w-full text-right mt-1"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                    />
+                    <button
+                      onClick={handleSavePayment}
+                      className="mt-3 w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+                    >
+                      บันทึกการชำระเงิน
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         </div>
-      </main>
+        </main>
     </div>
   );
 };

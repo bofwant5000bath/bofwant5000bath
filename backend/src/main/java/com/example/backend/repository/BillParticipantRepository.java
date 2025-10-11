@@ -11,4 +11,6 @@ import java.util.List;
 public interface BillParticipantRepository extends JpaRepository<BillParticipant, BillParticipantId> {
     // ใช้สำหรับดึง participants ของบิลเวลาแสดงรายละเอียด
     List<BillParticipant> findByBillBillId(Integer billId);
+    // ดึงรายการ BillParticipant ทั้งหมดที่ user คนหนึ่งมีใน group หนึ่ง
+    List<BillParticipant> findByUserUserIdAndBillGroupGroupId(Integer userId, Integer groupId);
 }

@@ -4,6 +4,8 @@ import com.example.backend.dto.DashboardSummaryDto;
 import com.example.backend.dto.GroupDetailsDto;
 import com.example.backend.dto.CreateGroupRequest;
 import com.example.backend.dto.UserDto;
+import com.example.backend.model.BillParticipant; // ✅ เพิ่ม import
+import com.example.backend.model.Bill;
 import com.example.backend.model.Group;
 import com.example.backend.model.GroupMember;
 import com.example.backend.model.User;
@@ -29,18 +31,21 @@ public class GroupController {
     private final GroupMemberRepository groupMemberRepository;
     private final BillRepository billRepository;
     private final PaymentRepository paymentRepository;
+    private final BillParticipantRepository billParticipantRepository; // ✅ เพิ่ม Repository
 
     @Autowired
     public GroupController(UserService userService,
                            GroupRepository groupRepository,
                            GroupMemberRepository groupMemberRepository,
                            BillRepository billRepository,
-                           PaymentRepository paymentRepository) {
+                           PaymentRepository paymentRepository,
+                           BillParticipantRepository billParticipantRepository) { // ✅ เพิ่ม DI
         this.userService = userService;
         this.groupRepository = groupRepository;
         this.groupMemberRepository = groupMemberRepository;
         this.billRepository = billRepository;
         this.paymentRepository = paymentRepository;
+        this.billParticipantRepository = billParticipantRepository; // ✅ เพิ่ม DI
     }
 
     @GetMapping("/dashboard/{userId}")
@@ -55,20 +60,51 @@ public class GroupController {
             Integer memberCount = groupMemberRepository.countByGroupId(group.getGroupId());
             BigDecimal groupTotalAmount = billRepository.sumAmountByGroupId(group.getGroupId());
 
-            // ✅ คำนวณหนี้เราต้องจ่าย (expected - paid)
-            BigDecimal myExpected = paymentRepository.sumExpectedForUser(userId, group.getGroupId());
-            BigDecimal myPayments = paymentRepository.sumAmountByPayerUserIdAndGroupId(userId, group.getGroupId());
-            BigDecimal myDebt = myExpected.subtract(myPayments);
+            // --- Logic การคำนวณ myDebt (เหมือนเดิมจากครั้งที่แล้ว) ---
+            BigDecimal myDebtForGroup = BigDecimal.ZERO;
+            List<BillParticipant> myParticipations = billParticipantRepository.findByUserUserIdAndBillGroupGroupId(userId, group.getGroupId());
+            for (BillParticipant p : myParticipations) {
+                BigDecimal amountPaidForBill = paymentRepository.sumAmountByPayerUserIdAndBillId(userId, p.getBill().getBillId());
+                BigDecimal debtForThisBill = p.getSplitAmount().subtract(amountPaidForBill);
+                if (debtForThisBill.compareTo(BigDecimal.ZERO) > 0) {
+                    myDebtForGroup = myDebtForGroup.add(debtForThisBill);
+                }
+            }
 
-            // ✅ คำนวณหนี้ที่เพื่อนติดเรา (expected - paid)
-            BigDecimal expectedFromOthers = paymentRepository.sumExpectedFromOthers(userId, group.getGroupId());
-            BigDecimal othersPaymentsToMe = paymentRepository.sumPaymentsFromOthersToMe(userId, group.getGroupId());
-            BigDecimal othersDebtToMe = expectedFromOthers.subtract(othersPaymentsToMe);
+            // ✅ ---- START: Logic การคำนวณ othersDebtToMe ใหม่ ----
+            BigDecimal othersDebtToMeForGroup = BigDecimal.ZERO;
 
-            totalOwed = totalOwed.add(myDebt);
-            totalReceivable = totalReceivable.add(othersDebtToMe);
+            // 1. ดึงบิลทั้งหมดในกลุ่มที่ "เรา" เป็นคนจ่าย
+            List<Bill> billsPaidByMe = billRepository.findByGroupGroupIdAndPaidByUserUserId(group.getGroupId(), userId);
 
-            groupDetailsList.add(new GroupDetailsDto(group, memberCount, groupTotalAmount, myDebt, othersDebtToMe));
+            for (Bill bill : billsPaidByMe) {
+                // 2. สำหรับแต่ละบิล, ดูว่าใครเป็นหนี้เราบ้าง (participants)
+                for (BillParticipant participant : bill.getParticipants()) { // ✅ ต้องมั่นใจว่า Bill entity มี @OneToMany participants
+                    // 3. ไม่นับหนี้ของตัวเอง
+                    if (participant.getUser().getUserId().equals(userId)) {
+                        continue;
+                    }
+
+                    // 4. คำนวณว่าลูกหนี้คนนี้ จ่ายเงินสำหรับบิลนี้มาเท่าไหร่แล้ว
+                    BigDecimal amountPaidByDebtor = paymentRepository.sumAmountByPayerUserIdAndBillId(
+                            participant.getUser().getUserId(), bill.getBillId());
+
+                    // 5. คำนวณหนี้ที่ยังค้างสำหรับส่วนนี้
+                    BigDecimal remainingDebt = participant.getSplitAmount().subtract(amountPaidByDebtor);
+
+                    // 6. ถ้ายอดค้างเป็นบวก (ยังติดหนี้) ถึงจะนำไปรวม
+                    if (remainingDebt.compareTo(BigDecimal.ZERO) > 0) {
+                        othersDebtToMeForGroup = othersDebtToMeForGroup.add(remainingDebt);
+                    }
+                }
+            }
+            // ✅ ---- END: Logic การคำนวณ othersDebtToMe ใหม่ ----
+
+
+            totalOwed = totalOwed.add(myDebtForGroup);
+            totalReceivable = totalReceivable.add(othersDebtToMeForGroup); // ⭐️ ใช้ค่าใหม่
+
+            groupDetailsList.add(new GroupDetailsDto(group, memberCount, groupTotalAmount, myDebtForGroup, othersDebtToMeForGroup)); // ⭐️ ใช้ค่าใหม่
         }
 
         DashboardSummaryDto dashboardSummary = new DashboardSummaryDto(totalOwed, totalReceivable, groupDetailsList);

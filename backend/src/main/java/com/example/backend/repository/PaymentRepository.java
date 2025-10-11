@@ -7,9 +7,16 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
+    @Query("SELECT p FROM Payment p JOIN FETCH p.payerUser WHERE p.bill.billId = :billId")
+    List<Payment> findByBillIdWithDetails(@Param("billId") Integer billId);
+
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
+            "WHERE p.payerUser.userId = :userId AND p.bill.billId = :billId")
+    BigDecimal sumAmountByPayerUserIdAndBillId(@Param("userId") Integer userId, @Param("billId") Integer billId);
 
     // ✅ ยอดที่ userId จ่ายจริงใน group
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p " +
