@@ -1,0 +1,40 @@
+{
+  "groupMembers": [],
+  "bills": [
+    {
+      "billId": 1,
+      "group": { "groupName": "ทริปเที่ยวทะเล" },
+      "title": "ค่าที่พัก",
+      "description": "ค่าที่พักทริปเที่ยวทะเล",
+      "amount": 4800.00,
+      "billDate": "2025-05-28T10:00:00Z",
+      "paidByUser": {
+        "userId": 1,
+        "fullName": "เกียรติกุล เข้มแข็ง"
+      },
+      "participants": [
+        {
+          "user": {
+            "userId": 1,
+            "fullName": "เกียรติกุล เข้มแข็ง"
+          },
+          "splitAmount": 1600.00
+        },
+        {
+          "user": {
+            "userId": 2,
+            "fullName": "พรพวีร์ พัฒนพรวิวัฒน์"
+          },
+          "splitAmount": 1600.00
+        },
+        {
+          "user": {
+            "userId": 3,
+            "fullName": "สุฑาณทิพย์ หลวงทิพย์"
+          },
+          "splitAmount": 1600.00
+        }
+      ]
+    }
+  ]
+}
