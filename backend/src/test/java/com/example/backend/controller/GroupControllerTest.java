@@ -1,16 +1,14 @@
 package com.example.backend.controller;
 
 import com.example.backend.dto.CreateGroupRequest;
+import com.example.backend.model.Bill;
+import com.example.backend.model.BillParticipant;
 import com.example.backend.model.Group;
 import com.example.backend.model.User;
-import com.example.backend.repository.BillRepository;
-import com.example.backend.repository.GroupMemberRepository;
-import com.example.backend.repository.GroupRepository;
-import com.example.backend.repository.PaymentRepository;
+import com.example.backend.repository.*;
 import com.example.backend.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -19,21 +17,23 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+
 @WebMvcTest(GroupController.class)
-@DisplayName("GroupController Unit Tests")
-class GroupControllerTest {
+public class GroupControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -56,98 +56,118 @@ class GroupControllerTest {
     @MockBean
     private PaymentRepository paymentRepository;
 
-    private User testUser;
-    private Group testGroup;
+    @MockBean
+    private BillParticipantRepository billParticipantRepository;
+
+    private User user1;
+    private User user2;
+    private Group group1;
 
     @BeforeEach
     void setUp() {
-        testUser = new User();
-        testUser.setUserId(1);
-        testUser.setUsername("testuser");
-        testUser.setFullName("Test User");
+        user1 = new User();
+        user1.setUserId(1);
+        user1.setUsername("keatikun");
+        user1.setFullName("เกียรติกุล เข้มแข็ง");
 
-        testGroup = new Group();
-        testGroup.setGroupId(101);
-        testGroup.setGroupName("Test Group");
-        testGroup.setCreatedByUser(testUser);
+        user2 = new User();
+        user2.setUserId(2);
+        user2.setUsername("pornpawee");
+        user2.setFullName("พรพวีร์ พัฒนพรวิวัฒน์");
+
+        group1 = new Group();
+        group1.setGroupId(1);
+        group1.setGroupName("ทริปเที่ยวทะเล");
+        group1.setCreatedByUser(user1);
     }
 
     @Test
-    @DisplayName("GET /dashboard/{userId} - Success Case")
     void whenGetDashboardSummary_withValidUserId_shouldReturnDashboardSummaryDto() throws Exception {
         // Arrange
         Integer userId = 1;
+        List<Group> userGroups = Collections.singletonList(group1);
 
-        when(groupMemberRepository.findGroupsByUserId(userId)).thenReturn(Collections.singletonList(testGroup));
-        when(groupMemberRepository.countByGroupId(testGroup.getGroupId())).thenReturn(3);
-        when(billRepository.sumAmountByGroupId(testGroup.getGroupId())).thenReturn(new BigDecimal("1500.00"));
+        when(groupMemberRepository.findGroupsByUserId(userId)).thenReturn(userGroups);
+        when(groupMemberRepository.countByGroupId(group1.getGroupId())).thenReturn(3);
+        when(billRepository.sumAmountByGroupId(group1.getGroupId())).thenReturn(new BigDecimal("9300.00"));
 
-        when(paymentRepository.sumExpectedForUser(eq(userId), eq(testGroup.getGroupId()))).thenReturn(new BigDecimal("500.00"));
-        when(paymentRepository.sumAmountByPayerUserIdAndGroupId(eq(userId), eq(testGroup.getGroupId()))).thenReturn(new BigDecimal("200.00"));
+        Bill billWhereIAmParticipant = new Bill();
+        billWhereIAmParticipant.setBillId(101);
 
-        when(paymentRepository.sumExpectedFromOthers(eq(userId), eq(testGroup.getGroupId()))).thenReturn(new BigDecimal("1000.00"));
-        when(paymentRepository.sumPaymentsFromOthersToMe(eq(userId), eq(testGroup.getGroupId()))).thenReturn(new BigDecimal("400.00"));
+        BillParticipant myParticipation = new BillParticipant();
+        myParticipation.setBill(billWhereIAmParticipant);
+        myParticipation.setSplitAmount(new BigDecimal("2200.00"));
+
+        when(billParticipantRepository.findByUserUserIdAndBillGroupGroupId(userId, group1.getGroupId()))
+                .thenReturn(Collections.singletonList(myParticipation));
+        when(paymentRepository.sumAmountByPayerUserIdAndBillId(userId, billWhereIAmParticipant.getBillId()))
+                .thenReturn(BigDecimal.ZERO);
+
+        Bill billPaidByMe = new Bill();
+        billPaidByMe.setBillId(102);
+
+        BillParticipant participantWhoOwesMe = new BillParticipant();
+        participantWhoOwesMe.setUser(user2);
+        participantWhoOwesMe.setSplitAmount(new BigDecimal("1600.00"));
+        billPaidByMe.setParticipants(Collections.singletonList(participantWhoOwesMe));
+
+        when(billRepository.findByGroupGroupIdAndPaidByUserUserId(group1.getGroupId(), userId))
+                .thenReturn(Collections.singletonList(billPaidByMe));
+        when(paymentRepository.sumAmountByPayerUserIdAndBillId(user2.getUserId(), billPaidByMe.getBillId()))
+                .thenReturn(BigDecimal.ZERO);
+
 
         // Act & Assert
-        mockMvc.perform(get("/api/groups/dashboard/{userId}", userId)
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/groups/dashboard/{userId}", userId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalOwed").value(300.00))
-                .andExpect(jsonPath("$.totalReceivable").value(600.00))
-                // ✅ **แก้ไขจุดนี้:** เปลี่ยนจาก groupDetailsList และโครงสร้างที่ซ้อนกัน เป็น "groups" และเข้าถึง property โดยตรง
-                .andExpect(jsonPath("$.groups[0].groupName").value("Test Group"))
-                .andExpect(jsonPath("$.groups[0].myDebt").value(300.00));
+                .andExpect(jsonPath("$.totalOwed", is(2200.0)))
+                .andExpect(jsonPath("$.totalReceivable", is(1600.0)))
+                // **FIX:** Changed "groupDetailsList" to "groups" to match actual JSON
+                .andExpect(jsonPath("$.groups", hasSize(1)))
+                // **FIX:** Changed "groupDetailsList" to "groups"
+                .andExpect(jsonPath("$.groups[0].groupName", is("ทริปเที่ยวทะเล")))
+                // **FIX:** Changed "groupDetailsList" to "groups"
+                .andExpect(jsonPath("$.groups[0].memberCount", is(3)));
     }
 
     @Test
-    @DisplayName("GET /users - Success Case")
-    void whenGetAllUsers_shouldReturnListOfUsers() throws Exception {
+    void whenGetAllUsers_shouldReturnListOfUserDtos() throws Exception {
         // Arrange
-        User anotherUser = new User();
-        anotherUser.setUserId(2);
-        anotherUser.setUsername("anotheruser");
-        anotherUser.setFullName("Another User");
-
-        List<User> userList = List.of(testUser, anotherUser);
-        when(userService.getAllUsers()).thenReturn(userList);
+        List<User> allUsers = Arrays.asList(user1, user2);
+        when(userService.getAllUsers()).thenReturn(allUsers);
 
         // Act & Assert
-        mockMvc.perform(get("/api/groups/users")
-                        .contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/groups/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].username").value("testuser"))
-                .andExpect(jsonPath("$[1].username").value("anotheruser"));
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].username", is("keatikun")))
+                .andExpect(jsonPath("$[1].username", is("pornpawee")));
     }
 
     @Test
-    @DisplayName("POST /create - Success Case")
     void whenCreateGroup_withValidRequest_shouldReturnCreatedGroup() throws Exception {
         // Arrange
-        CreateGroupRequest createGroupRequest = new CreateGroupRequest();
-        createGroupRequest.setGroupName("New Test Group");
-        createGroupRequest.setCreatedByUserId(1);
-        createGroupRequest.setMemberIds(List.of(1, 2));
+        List<Integer> memberIds = Arrays.asList(1, 2);
+        CreateGroupRequest request = new CreateGroupRequest();
+        request.setGroupName("โปรเจคจบ");
+        request.setCreatedByUserId(1);
+        request.setMemberIds(memberIds);
 
-        User memberUser = new User();
-        memberUser.setUserId(2);
+        Group savedGroup = new Group();
+        savedGroup.setGroupId(2);
+        savedGroup.setGroupName(request.getGroupName());
+        savedGroup.setCreatedByUser(user1);
 
-        when(userService.findById(1)).thenReturn(Optional.of(testUser));
-        when(userService.findById(2)).thenReturn(Optional.of(memberUser));
-        when(groupRepository.save(any(Group.class))).thenAnswer(invocation -> {
-            Group groupToSave = invocation.getArgument(0);
-            groupToSave.setGroupId(102);
-            groupToSave.setCreatedByUser(testUser);
-            return groupToSave;
-        });
+        when(userService.findById(1)).thenReturn(Optional.of(user1));
+        when(userService.findById(2)).thenReturn(Optional.of(user2));
+        when(groupRepository.save(any(Group.class))).thenReturn(savedGroup);
 
         // Act & Assert
         mockMvc.perform(post("/api/groups/create")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createGroupRequest)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.groupId").exists())
-                .andExpect(jsonPath("$.groupName").value("New Test Group"))
-                .andExpect(jsonPath("$.createdByUser.userId").value(1));
+                .andExpect(jsonPath("$.groupName", is("โปรเจคจบ")))
+                .andExpect(jsonPath("$.createdByUser.userId", is(1)));
     }
 }

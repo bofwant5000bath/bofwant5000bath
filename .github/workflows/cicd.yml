@@ -83,7 +83,7 @@ jobs:
 
       # 3. Build and test with Maven
       - name: 🔨 Build and test with Maven
-        run: mvn -B package --file backend/pom.xml
+        run: mvn -B clean install --file backend/pom.xml
 
       # 4. Log in to Docker Hub
       - name: 🐳 Log in to Docker Hub

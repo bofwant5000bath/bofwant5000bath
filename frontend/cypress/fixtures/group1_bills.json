@@ -1,0 +1,30 @@
+{
+  "groupMembers": [
+    {
+      "userId": 1,
+      "fullName": "เกียรติกุล เข้มแข็ง"
+    },
+    {
+      "userId": 2,
+      "fullName": "พรพวีร์ พัฒนพรวิวัฒน์"
+    },
+    {
+      "userId": 3,
+      "fullName": "สุฑาณทิพย์ หลวงทิพย์"
+    }
+  ],
+  "bills": [
+    {
+      "billId": 1,
+      "group": { "groupName": "ทริปเที่ยวทะเล" },
+      "title": "ค่าที่พัก",
+      "amount": 4800.00,
+      "billDate": "2025-10-10T10:00:00Z",
+      "paidByUser": {
+        "userId": 1,
+        "fullName": "เกียรติกุล เข้มแข็ง"
+      },
+      "participants": []
+    }
+  ]
+}

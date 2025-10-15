@@ -1,0 +1,12 @@
+[
+  {
+    "paymentId": 1,
+    "billId": 1,
+    "payerUser": {
+      "userId": 2,
+      "fullName": "พรพวีร์ พัฒนพรวิวัฒน์"
+    },
+    "amount": 600.00,
+    "payment_date": "2025-05-29T11:00:00Z"
+  }
+]

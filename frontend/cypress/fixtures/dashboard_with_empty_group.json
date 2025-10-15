@@ -1,0 +1,22 @@
+{
+  "totalOwed": 1000.00,
+  "totalReceivable": 2500.00,
+  "groups": [
+    {
+      "groupId": 1,
+      "groupName": "ทริปเที่ยวทะเล",
+      "memberCount": 3,
+      "groupTotalAmount": 9300.00,
+      "myDebt": 1000.00,
+      "othersDebtToMe": 2500.00
+    },
+    {
+      "groupId": 2,
+      "groupName": "ค่าห้องเดือนนี้",
+      "memberCount": 2,
+      "groupTotalAmount": 0,
+      "myDebt": 0,
+      "othersDebtToMe": 0
+    }
+  ]
+}
