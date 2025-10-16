@@ -14,7 +14,11 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173")
+                        .allowedOrigins(
+                            "http://localhost:5173",   // dev (vite)
+                            "http://localhost:30080", // deploy (K8s)
+                            "http://192.168.43.60:30080" // <--- เพิ่ม IP ของคุณที่นี่    
+                        )   
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowedHeaders("*");
             }

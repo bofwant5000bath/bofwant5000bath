@@ -1,7 +1,7 @@
 // src/pages/BillPaymentPage.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from '../api/api.js';
 
 const BillPaymentPage = () => {
   const { groupId, billId } = useParams();
@@ -37,8 +37,8 @@ const BillPaymentPage = () => {
 
     const fetchBillAndPayments = async () => {
       try {
-        const groupRes = await axios.get(
-          `http://localhost:8080/api/bills/group/${groupId}`
+        const groupRes = await apiClient.get(
+          `/bills/group/${groupId}`
         );
         // ... (โค้ดส่วนที่เหลือใน useEffect เหมือนเดิมทั้งหมด) ...
         const foundBill = groupRes.data.bills?.find(
@@ -50,8 +50,8 @@ const BillPaymentPage = () => {
         }
         setBill(foundBill);
 
-        const paymentsRes = await axios.get(
-          `http://localhost:8080/api/payments/bill/${billId}`
+        const paymentsRes = await apiClient.get(
+          `/payments/bill/${billId}`
         );
         const payments = paymentsRes.data;
 
@@ -118,7 +118,7 @@ const BillPaymentPage = () => {
         amount: enteredAmount, 
       };
 
-      await axios.post("http://localhost:8080/api/payments/create", payload);
+      await apiClient.post("/payments/create", payload);
 
       alert(`✅ บันทึกการจ่ายเงินจำนวน ${formatCurrency(enteredAmount)} สำเร็จ`);
       navigate(`/bill/${groupId}`);

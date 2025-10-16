@@ -1,7 +1,7 @@
 // src/components/AddExpenseUnified.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import apiClient from '../api/api.js';
 
 const AddExpenseUnified = () => {
   const navigate = useNavigate();
@@ -21,8 +21,8 @@ const AddExpenseUnified = () => {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/api/bills/group/${groupId}`
+        const res = await apiClient.get(
+          `/bills/group/${groupId}`
         );
         const groupMembers = res.data.groupMembers || [];
         setMembers(groupMembers);
@@ -302,9 +302,9 @@ const AddExpenseUnified = () => {
       setLoading(true);
       const endpoint =
         splitMethod === "tags"
-          ? "http://localhost:8080/api/bills/create/by-tag"
-          : "http://localhost:8080/api/bills/create";
-      await axios.post(endpoint, payload);
+          ? "/bills/create/by-tag"
+          : "/bills/create";
+      await apiClient.post(endpoint, payload);
       alert("✅ บันทึกค่าใช้จ่ายสำเร็จ!");
       navigate(-1);
     } catch (err) {

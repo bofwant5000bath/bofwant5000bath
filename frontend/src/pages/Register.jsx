@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import axios from 'axios';
+import apiClient from '../api/api.js';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
@@ -61,8 +61,8 @@ const Register = () => {
         profilePictureUrl: pictureUrl || '',
       };
 
-      const response = await axios.post(
-        'http://localhost:8080/api/auth/register',
+      const response = await apiClient.post(
+        '/auth/register',
         payload,
         {
           headers: { 'Content-Type': 'application/json' },

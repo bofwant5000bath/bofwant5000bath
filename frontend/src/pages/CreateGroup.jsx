@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/api.js';
 
 const CreateGroup = () => {
   const [groupName, setGroupName] = useState('');
@@ -20,7 +20,7 @@ const CreateGroup = () => {
   useEffect(() => {
     const fetchAllUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/groups/users');
+        const response = await apiClient.get('/groups/users');
         const users = response.data;
         setAllUsers(users);
         const currentUser = users.find(user => user.userId === parseInt(currentUserId));
@@ -81,7 +81,7 @@ const CreateGroup = () => {
         memberIds: selectedUsers,
       };
 
-      await axios.post('http://localhost:8080/api/groups/create', payload);
+      await apiClient.post('/groups/create', payload);
       setSuccess('สร้างกลุ่มสำเร็จ!');
       
       setTimeout(() => {

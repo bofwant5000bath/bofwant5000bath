@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from '../api/api.js';
 import { useNavigate, Link } from "react-router-dom";
 
 const Dashboard = () => {
@@ -20,8 +20,8 @@ const Dashboard = () => {
         const userId = localStorage.getItem("user_id");
         if (!userId) throw new Error("User not logged in.");
 
-        const response = await axios.get(
-          `http://localhost:8080/api/groups/dashboard/${userId}`
+        const response = await apiClient.get(
+          `/groups/dashboard/${userId}`
         );
         setDashboardData(response.data);
 

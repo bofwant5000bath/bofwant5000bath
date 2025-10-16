@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../api/api.js';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -12,7 +12,7 @@ const Login = () => {
     e.preventDefault();
     try {
       // เรียกใช้งาน API สำหรับการเข้าสู่ระบบ
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         username,
         password,
       });

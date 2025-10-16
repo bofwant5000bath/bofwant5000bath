@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from '../api/api.js';
 
 const Bill = () => {
   const { groupId } = useParams();
@@ -36,8 +36,8 @@ const Bill = () => {
         setLoading(true);
         setError(null);
 
-        const billRes = await axios.get(
-          `http://localhost:8080/api/bills/group/${groupId}`
+        const billRes = await apiClient.get(
+          `/bills/group/${groupId}`
         );
 
         console.log("✅ ข้อมูลจาก backend:", billRes.data);
