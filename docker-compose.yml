@@ -1,30 +1,4 @@
-version: "3.9"
-
 services:
-  backend:
-    build: ./backend
-    container_name: spring-backend
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: Id_6687001
-    depends_on:
-      - mysql
-    networks:
-      - app-network
-
-  frontend:
-    build: ./frontend
-    container_name: react-frontend
-    ports:
-      - "5173:80"
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
   mysql:
     image: mysql:8.0
     container_name: mysql-db
@@ -43,6 +17,44 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pId_6687001"]
+      interval: 10s
+      timeout: 5s
+      retries: 10  # เพิ่มจาก 5 เป็น 10
+      start_period: 40s  # ให้เวลา MySQL init ก่อน
+
+  backend:
+    build: ./backend
+    container_name: spring-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Id_6687001
+    depends_on:
+      mysql:
+        condition: service_healthy  # ⭐ เพิ่มบรรทัดนี้กลับมา - สำคัญมาก!
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s  # ให้เวลา Spring Boot start ก่อน
+
+  frontend:
+    build: ./frontend
+    container_name: react-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy  # ⭐ รอให้ Backend พร้อมก่อน
     networks:
       - app-network
 
