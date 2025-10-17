@@ -9,7 +9,7 @@ on:
       - 'frontend/**'
       - '.github/workflows/ci-frontend.yml'
   pull_request:
-    branches: [ "main" ] # Triggers on pull requests targeting 'main' or 'develop'
+    branches: [ "main",  "moo" ] # Triggers on pull requests targeting 'main' or 'develop'
     paths:
       - 'frontend/**'
 
