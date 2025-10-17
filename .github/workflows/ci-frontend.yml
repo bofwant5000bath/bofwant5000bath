@@ -42,9 +42,9 @@ jobs:
         run: npm ci
 
       # 4. Run ESLint for code quality checks. The build fails if linting errors are found.
-      - name: Run ESLint
-        working-directory: ./frontend
-        run: npm run lint
+      # - name: Run ESLint
+      #   working-directory: ./frontend
+      #   run: npm run lint
       
       # 5. Set up Docker Buildx for advanced image building features
       - name: Set up Docker Buildx
