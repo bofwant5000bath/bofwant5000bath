@@ -5,9 +5,9 @@ name: Full CI/CD Pipeline
 on:
   # Triggers the workflow on push or pull request events for the "main" and "moo" branches
   push:
-    branches: [ "main", "deploytest" ]
+    branches: [ "main", "moo" ]
   pull_request:
-    branches: [ "main", "deploytest" ]
+    branches: [ "main", "moo" ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
