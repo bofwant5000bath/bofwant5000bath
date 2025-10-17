@@ -14,7 +14,7 @@ export default defineConfig({
   ],
   build: {
     // เปลี่ยน output directory จาก 'dist' เป็น 'build' เพื่อให้เข้ากับ Dockerfile
-    outDir: 'build', 
+    outDir: 'dist', 
     // (ทางเลือก) สร้าง source map เพื่อให้ coverage report อ่านง่ายขึ้น
     sourcemap: true,
   },
