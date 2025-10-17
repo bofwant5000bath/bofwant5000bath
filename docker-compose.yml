@@ -9,8 +9,7 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: Id_6687001
     depends_on:
-      - mysql:
-          condition: service_healthy 
+      - mysql  # <--- ลบ 'condition: service_healthy' ออก
     networks:
       - app-network
 
