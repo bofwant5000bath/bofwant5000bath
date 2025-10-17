@@ -7,6 +7,7 @@ on:
     branches: [ "main", "moo" ] # Triggers on pushes to the 'frontend' branch
     paths: 
       - 'frontend/**'
+      - 'docker-compose.yml'
       - '.github/workflows/ci-frontend.yml'
   pull_request:
     branches: [ "main" ] # Triggers on pull requests targeting 'main' or 'develop'
