@@ -37,7 +37,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: Id_6687001
     depends_on:
       mysql:
-        condition: service_healthy  # ⭐ เพิ่มบรรทัดนี้กลับมา - สำคัญมาก!
+        condition: service_healthy  #สำคัญมาก!
     networks:
       - app-network
     healthcheck:
