@@ -1,16 +1,19 @@
+// src/main/java/com/example/backend/repository/BillParticipantRepository.java
 package com.example.backend.repository;
 
 import com.example.backend.model.BillParticipant;
 import com.example.backend.model.BillParticipantId;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface BillParticipantRepository extends JpaRepository<BillParticipant, BillParticipantId> {
-    // ใช้สำหรับดึง participants ของบิลเวลาแสดงรายละเอียด
+
     List<BillParticipant> findByBillBillId(Integer billId);
-    // ดึงรายการ BillParticipant ทั้งหมดที่ user คนหนึ่งมีใน group หนึ่ง
+
+    // ✅ เพิ่มเมธอดนี้เข้าไป
+    Optional<BillParticipant> findByBillBillIdAndUserUserId(Integer billId, Integer userId);
+
+    // เพิ่มเมธอดนี้ด้วย (สำหรับอีกไฟล์เทส)
     List<BillParticipant> findByUserUserIdAndBillGroupGroupId(Integer userId, Integer groupId);
 }

@@ -1,0 +1,21 @@
+{
+  "extends": "@cypress/code-coverage/support",
+  "exclude": [
+    "cypress/**/*.*",
+    "**/*.cy.js",
+    "**/*.spec.js",
+    "**/node_modules/**",
+    "**/coverage/**",
+    "**/build/**",
+    "**/dist/**"
+  ],
+  "reporter": [
+    "text",
+    "json",
+    "html",
+    "lcov"
+  ],
+  "reportDir": "coverage",
+  "all": true,
+  "check-coverage": false
+}

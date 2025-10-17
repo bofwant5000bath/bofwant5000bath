@@ -17,7 +17,9 @@ public class CorsConfig {
                         .allowedOrigins(
                             "http://localhost:5173",   // dev (vite)
                             "http://localhost:30080", // deploy (K8s)
-                            "http://192.168.43.60:30080" // <--- เพิ่ม IP ของคุณที่นี่    
+                            "http://192.168.43.60:30080", // <--- IP fah   
+                            "http://192.168.43.227:30080", // IP bell
+                            "http://172.20.10.2:30080"
                         )   
                         .allowedMethods("GET", "POST", "PUT", "DELETE")
                         .allowedHeaders("*");

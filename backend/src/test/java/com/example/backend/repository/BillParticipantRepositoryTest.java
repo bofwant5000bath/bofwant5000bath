@@ -1,3 +1,4 @@
+// src/test/java/com/example/backend/repository/BillParticipantRepositoryTest.java
 package com.example.backend.repository;
 
 import com.example.backend.model.*;
@@ -23,36 +24,46 @@ class BillParticipantRepositoryTest {
 
     private User user1, user2;
     private Group group1;
-    private Bill bill1, bill2;
+    private Bill bill1;
 
     @BeforeEach
     void setup() {
         // Arrange: สร้างข้อมูลตั้งต้น
-        user1 = new User(); user1.setUsername("u1"); user1.setPassword("p"); user1.setFullName("u1"); entityManager.persist(user1);
-        user2 = new User(); user2.setUsername("u2"); user2.setPassword("p"); user2.setFullName("u2"); entityManager.persist(user2);
-        group1 = new Group(); group1.setGroupName("G1"); entityManager.persist(group1);
+        user1 = new User(); user1.setUsername("u1"); user1.setPassword("p"); user1.setFullName("u1");
+        entityManager.persist(user1);
+        user2 = new User(); user2.setUsername("u2"); user2.setPassword("p"); user2.setFullName("u2");
+        entityManager.persist(user2);
+        group1 = new Group(); group1.setGroupName("G1"); group1.setCreatedByUser(user1);
+        entityManager.persist(group1);
 
-        bill1 = new Bill(); bill1.setGroup(group1); bill1.setPaidByUser(user1); bill1.setAmount(new BigDecimal("100")); bill1.setTitle("B1"); bill1.setSplitMethod(SplitMethod.equal); bill1.setBillDate(LocalDateTime.now()); entityManager.persist(bill1);
-        bill2 = new Bill(); bill2.setGroup(group1); bill2.setPaidByUser(user2); bill2.setAmount(new BigDecimal("50")); bill2.setTitle("B2"); bill2.setSplitMethod(SplitMethod.equal); bill2.setBillDate(LocalDateTime.now()); entityManager.persist(bill2);
+        bill1 = new Bill(); bill1.setGroup(group1); bill1.setPaidByUser(user1); bill1.setAmount(new BigDecimal("100")); bill1.setTitle("B1");
+        bill1.setSplitMethod(SplitMethod.equal);
+        bill1.setBillDate(LocalDateTime.now());
+        entityManager.persist(bill1);
+
+        Bill bill2 = new Bill(); bill2.setGroup(group1); bill2.setPaidByUser(user2); bill2.setAmount(new BigDecimal("50")); bill2.setTitle("B2");
+        bill2.setSplitMethod(SplitMethod.equal);
+        bill2.setBillDate(LocalDateTime.now());
+        entityManager.persist(bill2);
 
         // Participants for Bill 1
         BillParticipant bp1_u1 = new BillParticipant();
         bp1_u1.setId(new BillParticipantId(bill1.getBillId(), user1.getUserId()));
         bp1_u1.setBill(bill1); bp1_u1.setUser(user1); bp1_u1.setSplitAmount(new BigDecimal("50"));
-        bp1_u1.setIsPaid(PaymentStatus.unpaid); // ✅ เพิ่มบรรทัดนี้
+        bp1_u1.setIsPaid(PaymentStatus.unpaid);
         entityManager.persist(bp1_u1);
 
         BillParticipant bp1_u2 = new BillParticipant();
         bp1_u2.setId(new BillParticipantId(bill1.getBillId(), user2.getUserId()));
         bp1_u2.setBill(bill1); bp1_u2.setUser(user2); bp1_u2.setSplitAmount(new BigDecimal("50"));
-        bp1_u2.setIsPaid(PaymentStatus.unpaid); // ✅ เพิ่มบรรทัดนี้
+        bp1_u2.setIsPaid(PaymentStatus.unpaid);
         entityManager.persist(bp1_u2);
 
         // Participant for Bill 2
         BillParticipant bp2_u1 = new BillParticipant();
         bp2_u1.setId(new BillParticipantId(bill2.getBillId(), user1.getUserId()));
         bp2_u1.setBill(bill2); bp2_u1.setUser(user1); bp2_u1.setSplitAmount(new BigDecimal("50"));
-        bp2_u1.setIsPaid(PaymentStatus.unpaid); // ✅ เพิ่มบรรทัดนี้
+        bp2_u1.setIsPaid(PaymentStatus.unpaid);
         entityManager.persist(bp2_u1);
 
         entityManager.flush();
