@@ -5,7 +5,7 @@ export default defineConfig({
   e2e: {
     setupNodeEvents(on, config) {
       // implement node event listeners here
-      config.baseUrl = 'http://localhost:80/'; // <--- แก้เป็น URL ของคุณ
+      config.baseUrl = 'http://localhost:5173/'; // <--- แก้เป็น URL ของคุณ
       codeCoverageTask(on, config);
       return config;
     },
