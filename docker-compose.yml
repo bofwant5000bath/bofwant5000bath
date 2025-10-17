@@ -11,7 +11,8 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: Id_6687001
     depends_on:
-      - mysql
+    mysql:
+      condition: service_healthy # <--- เปลี่ยนตรงนี้
     networks:
       - app-network
 
@@ -34,6 +35,11 @@ services:
       MYSQL_DATABASE: devops_test2
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pId_6687001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     command: [
       "--character-set-server=utf8mb4",
       "--collation-server=utf8mb4_unicode_ci"
