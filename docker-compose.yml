@@ -12,7 +12,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: Id_6687001
     depends_on:
       - mysql: 
-          condition: service_healthy 
+        condition: service_healthy # <--- แก้ไข Indentation ให้เหลือ 2 ช่อง
     networks:
       - app-network
 
