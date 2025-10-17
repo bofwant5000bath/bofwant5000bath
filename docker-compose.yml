@@ -54,6 +54,70 @@
 #   app-network:
 #     driver: bridge ถึงตรงนี้
 
+# services:
+#   backend:
+#     build: ./backend
+#     container_name: spring-backend
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       # ตรวจสอบว่า URL นี้ใช้ชื่อ Service 'mysql' และพอร์ต 3306
+#       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
+#       SPRING_DATASOURCE_USERNAME: root
+#       SPRING_DATASOURCE_PASSWORD: Id_6687001
+#     depends_on:
+#       # ✅ ต้องเป็น Array of Object และรอจนกว่าจะ Healthy
+#       - mysql:
+#           condition: service_healthy
+#     networks:
+#       - app-network
+
+#   frontend:
+#     build: ./frontend
+#     container_name: react-frontend
+#     ports:
+#       - "5173:80"
+#     # ✅ รอ Backend จนกว่าจะ Start (Backend ต้องรอ MySQL ด้วยเงื่อนไข Healthy แล้ว)
+#     depends_on:
+#       - backend
+#     networks:
+#       - app-network
+
+#   mysql:
+#     image: mysql:8.0
+#     container_name: mysql-db
+#     restart: always
+#     environment:
+#       MYSQL_ROOT_PASSWORD: Id_6687001
+#       MYSQL_DATABASE: devops_test2
+#       # ลบอักขระแปลกปลอมและใช้ C.UTF-8 ที่ถูกต้อง
+#       LANG: C.UTF-8
+#       LC_ALL: C.UTF-8
+#     command: [
+#       "--character-set-server=utf8mb4",
+#       "--collation-server=utf8mb4_unicode_ci"
+#     ]
+#     ports:
+#       - "3307:3306"
+#     volumes:
+#       - mysql_data:/var/lib/mysql
+#       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#     networks:
+#       - app-network
+#     # ✅ ต้องมี Healthcheck เพื่อให้ Backend รู้ว่าเมื่อไหร่ควรจะเชื่อมต่อ
+#     healthcheck:
+#       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pId_6687001"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+# volumes:
+#   mysql_data:
+
+# networks:
+#   app-network:
+#     driver: bridge ถึงตรงนี้
+
 services:
   backend:
     build: ./backend
@@ -61,14 +125,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # ตรวจสอบว่า URL นี้ใช้ชื่อ Service 'mysql' และพอร์ต 3306
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: Id_6687001
+    # ✅ ส่วนที่แก้ไข Syntax Error และเพิ่มการรอ Healthcheck ✅
     depends_on:
-      # ✅ ต้องเป็น Array of Object และรอจนกว่าจะ Healthy
       - mysql:
-          condition: service_healthy
+          condition: service_healthy 
     networks:
       - app-network
 
@@ -77,7 +140,6 @@ services:
     container_name: react-frontend
     ports:
       - "5173:80"
-    # ✅ รอ Backend จนกว่าจะ Start (Backend ต้องรอ MySQL ด้วยเงื่อนไข Healthy แล้ว)
     depends_on:
       - backend
     networks:
@@ -90,7 +152,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: Id_6687001
       MYSQL_DATABASE: devops_test2
-      # ลบอักขระแปลกปลอมและใช้ C.UTF-8 ที่ถูกต้อง
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
     command: [
@@ -104,7 +165,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
-    # ✅ ต้องมี Healthcheck เพื่อให้ Backend รู้ว่าเมื่อไหร่ควรจะเชื่อมต่อ
+    # ✅ เพิ่ม Healthcheck เพื่อให้ Backend ทราบว่า MySQL พร้อมใช้งานแล้ว
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pId_6687001"]
       interval: 10s
