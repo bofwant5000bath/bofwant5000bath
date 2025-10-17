@@ -2,7 +2,7 @@ name: Frontend CI - Build, Test & Push
 
 on:
   push:
-    branches: [ "main", "moo" ]
+    branches: [ "main" ]
     paths: 
       - 'frontend/**'
       - 'docker-compose.yml'
