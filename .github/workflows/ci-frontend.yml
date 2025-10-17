@@ -9,7 +9,7 @@ on:
       - 'frontend/**'
       - '.github/workflows/ci-frontend.yml'
   pull_request:
-    branches: [ "main",  "moo" ] # Triggers on pull requests targeting 'main' or 'develop'
+    branches: [ "main" ] # Triggers on pull requests targeting 'main' or 'develop'
     paths:
       - 'frontend/**'
 
@@ -50,45 +50,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-# ... (Step 6: Execute Cypress E2E tests)
+      # 6. Execute Cypress E2E tests within a Docker Compose environment
       - name: Run Cypress E2E Tests with Docker Compose
+        # The working directory is set to the root because docker-compose.yml is there
         run: |
+          # Build and start services in detached mode
           echo "Building and starting services..."
           docker compose up --build -d
 
-          # 1. Wait for Backend (Spring) to be ready on port 8080 (Mapped port)
-          echo "Waiting for Backend on port 8080..."
-          timeout 180s bash -c 'until curl --silent --fail http://localhost:8080; do echo "Backend not ready. Retrying in 5s..."; sleep 5; done'
+          # Health Check: Wait until the frontend service is responsive on port 80
+          echo "Waiting for container to be ready..."
+          # This command waits for up to 3 minutes for the service to return a successful HTTP status
+          timeout 180s bash -c 'until curl --silent --fail http://localhost:5173; do echo "Retrying in 5s..."; sleep 5; done'
           
-          # 2. Wait for Frontend to be accessible on port 5173 (Mapped port)
-          echo "Backend is ready! Waiting for Frontend on port 5173..."
-          timeout 180s bash -c 'until curl --silent --fail http://localhost:5173; do echo "Frontend not accessible. Retrying in 5s..."; sleep 5; done'
-          
-          # Once all services are ready, run the Cypress tests
-          echo "All containers ready! Running Cypress E2E tests..."
+          # Once the service is ready, run the Cypress tests
+          echo "Container is ready! Running Cypress E2E tests..."
+          # Install dependencies and run Cypress in the host environment
           cd ./frontend
           npm ci
           npm run cy:run
-
-      # # 6. Execute Cypress E2E tests within a Docker Compose environment
-      # - name: Run Cypress E2E Tests with Docker Compose
-      #   # The working directory is set to the root because docker-compose.yml is there
-      #   run: |
-      #     # Build and start services in detached mode
-      #     echo "Building and starting services..."
-      #     docker compose up --build -d
-
-      #     # Health Check: Wait until the frontend service is responsive on port 80
-      #     echo "Waiting for container to be ready..."
-      #     # This command waits for up to 3 minutes for the service to return a successful HTTP status
-      #     timeout 180s bash -c 'until curl --silent --fail http://localhost:5173; do echo "Retrying in 5s..."; sleep 5; done'
-          
-      #     # Once the service is ready, run the Cypress tests
-      #     echo "Container is ready! Running Cypress E2E tests..."
-      #     # Install dependencies and run Cypress in the host environment
-      #     cd ./frontend
-      #     npm ci
-      #     npm run cy:run
 
       # 7. Always stop and remove containers after the test run to clean up the runner
       - name: Stop and Remove Containers
