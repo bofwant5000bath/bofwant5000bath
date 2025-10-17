@@ -60,10 +60,11 @@ jobs:
 
           # 1. Health Check: WAIT FOR BACKEND (8080) FIRST
           #    เพิ่มขั้นตอนนี้เพื่อให้ Backend มีเวลาเชื่อมต่อกับ MySQL (ใช้ 300s เพื่อความปลอดภัย)
-          echo "Waiting for Backend on port 8080..."
-          timeout 300s bash -c 'until curl --silent --fail http://localhost:8080; do echo "Backend not ready. Retrying in 5s..."; sleep 5; done'
+         echo "Waiting for Backend on port 8080..."
+          # ✅ เปลี่ยน 300s เป็น 420s (7 นาที) หรือ 480s (8 นาที)
+          timeout 420s bash -c 'until curl --silent --fail http://localhost:8080; do echo "Backend not ready. Retrying in 5s..."; sleep 5; done'
 
-          # 2. Health Check: WAIT FOR FRONTEND (5173)
+          # 2. Health Check: WAIT FOR FRONTEND (5173) - ปล่อย 180s ตามเดิม
           echo "Backend is ready! Waiting for Frontend on port 5173..."
           timeout 180s bash -c 'until curl --silent --fail http://localhost:5173; do echo "Frontend not accessible. Retrying in 5s..."; sleep 5; done'
           
