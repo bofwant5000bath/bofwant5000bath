@@ -5,9 +5,9 @@ name: Full CI/CD Pipeline
 on:
   # Triggers the workflow on push or pull request events for the "main" and "moo" branches
   push:
-    branches: [ "main", "moo" ]
+    branches: [ "main", "deploytest" ]
   pull_request:
-    branches: [ "main", "moo" ]
+    branches: [ "main", "deploytest" ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -110,11 +110,13 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔑 Configure kubectl
-        uses: azure/k8s-set-context@v1
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
+      - name: 🔑 Decode Kubeconfig
+        shell: powershell
+        run: |
+          $kubeconfigDecoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String("${{ secrets.KUBECONFIG }}"))
+          $kubeconfigPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath "kubeconfig"
+          Set-Content -Path $kubeconfigPath -Value $kubeconfigDecoded
+          echo "KUBECONFIG=$kubeconfigPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 🚀 Deploy to Kubernetes
         run: |
