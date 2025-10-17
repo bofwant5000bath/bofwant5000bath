@@ -128,7 +128,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: Id_6687001
-    # ✅ ส่วนที่แก้ไข Syntax Error และเพิ่มการรอ Healthcheck ✅
+    # ✅ CORRECT depends_on structure (Array of Objects)
     depends_on:
       - mysql:
           condition: service_healthy 
@@ -140,6 +140,7 @@ services:
     container_name: react-frontend
     ports:
       - "5173:80"
+    # ✅ Correct depends_on (Array of Strings)
     depends_on:
       - backend
     networks:
@@ -165,7 +166,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
-    # ✅ เพิ่ม Healthcheck เพื่อให้ Backend ทราบว่า MySQL พร้อมใช้งานแล้ว
+    # ✅ Essential Healthcheck for the Backend to wait for
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pId_6687001"]
       interval: 10s
