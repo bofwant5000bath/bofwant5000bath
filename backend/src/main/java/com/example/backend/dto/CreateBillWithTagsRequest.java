@@ -17,6 +17,12 @@ public class CreateBillWithTagsRequest {
     private Integer paidByUserId;
     private SplitMethod splitMethod;
     private List<TagSplitDto> tags;
+    // ✅ ---- START: เพิ่มฟิลด์ใหม่ 4 บรรทัดนี้ ----
+    private String currencyCode;
+    private BigDecimal exchangeRate;
+    private String promptpayNumber;
+    private String receiptImageUrl;
+    // ✅ ---- END: เพิ่มฟิลด์ใหม่ ----
 
     @Getter
     @Setter

@@ -31,4 +31,7 @@ public class Payment {
 
     @Column(name = "payment_date", nullable = false)
     private LocalDateTime paymentDate = LocalDateTime.now();
+
+    @Column(name = "slip_image_url")
+    private String slipImageUrl;
 }

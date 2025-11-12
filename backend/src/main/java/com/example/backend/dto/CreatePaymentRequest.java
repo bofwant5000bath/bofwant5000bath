@@ -11,4 +11,5 @@ public class CreatePaymentRequest {
     private Integer billId;
     private Integer payerUserId;
     private BigDecimal amount;
+    private String slipImageUrl;
 }

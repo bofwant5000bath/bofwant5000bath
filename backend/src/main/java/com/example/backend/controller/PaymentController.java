@@ -29,10 +29,11 @@ public class PaymentController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Payment> createPayment(@RequestBody CreatePaymentRequest request) {
+    public ResponseEntity<PaymentDto> createPayment(@RequestBody CreatePaymentRequest request) { // ⭐️ 1. เปลี่ยนเป็น PaymentDto
         try {
             Payment payment = paymentService.createPayment(request);
-            return new ResponseEntity<>(payment, HttpStatus.CREATED);
+            PaymentDto paymentDto = new PaymentDto(payment); // ⭐️ 2. แปลง Payment เป็น DTO
+            return new ResponseEntity<>(paymentDto, HttpStatus.CREATED); // ⭐️ 3. ส่ง DTO กลับ
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

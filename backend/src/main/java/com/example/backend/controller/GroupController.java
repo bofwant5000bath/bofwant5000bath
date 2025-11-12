@@ -306,7 +306,7 @@ public class GroupController {
         // 9. ส่ง Status 201 Created พร้อมกับรายชื่อคนที่ถูกเพิ่มจริงๆ
         return ResponseEntity.status(HttpStatus.CREATED).body(addedMemberDtos);
     }
-    
+
     // ✅ 6. เพิ่ม Endpoint ใหม่สำหรับ Pin/Unpin
     @PostMapping("/pin")
     public ResponseEntity<Void> togglePinGroup(@RequestBody PinGroupRequestDto request) {

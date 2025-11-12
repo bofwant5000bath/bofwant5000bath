@@ -16,6 +16,7 @@ public class PaymentDto {
     private UserDto payerUser; // ใช้ UserDto ที่มีอยู่แล้ว
     private BigDecimal amount;
     private LocalDateTime paymentDate;
+    private String slipImageUrl;
 
     public PaymentDto(Payment payment) {
         this.paymentId = payment.getPaymentId();
@@ -23,5 +24,6 @@ public class PaymentDto {
         this.payerUser = new UserDto(payment.getPayerUser());
         this.amount = payment.getAmount();
         this.paymentDate = payment.getPaymentDate();
+        this.slipImageUrl = payment.getSlipImageUrl();
     }
 }

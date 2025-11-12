@@ -51,6 +51,8 @@ public class PaymentService {
         payment.setPayerUser(userOpt.get());
         payment.setAmount(request.getAmount());
 
+        payment.setSlipImageUrl(request.getSlipImageUrl());
+
         return paymentRepository.save(payment);
     }
 }

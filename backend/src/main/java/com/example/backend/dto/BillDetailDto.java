@@ -17,6 +17,13 @@ public class BillDetailDto {
     private String title;
     private String description;
     private BigDecimal amount;
+    // ✅ ---- START: เพิ่มฟิลด์ใหม่ ----
+    private String currencyCode;
+    private BigDecimal exchangeRate;
+    private BigDecimal amountInThb; // ⭐️ เราส่งฟิลด์ที่ DB คำนวณให้กลับไปด้วย
+    private String promptpayNumber;
+    private String receiptImageUrl;
+    // ✅ ---- END: เพิ่มฟิลด์ใหม่ ----
     private UserDto paidByUser;
     private String splitMethod;
     private LocalDateTime billDate;
@@ -27,6 +34,13 @@ public class BillDetailDto {
         this.title = bill.getTitle();
         this.description = bill.getDescription();
         this.amount = bill.getAmount();
+        // ✅ ---- START: เพิ่ม set-ters ใน Constructor ----
+        this.currencyCode = bill.getCurrencyCode();
+        this.exchangeRate = bill.getExchangeRate();
+        this.amountInThb = bill.getAmount().multiply(bill.getExchangeRate());
+        this.promptpayNumber = bill.getPromptpayNumber();
+        this.receiptImageUrl = bill.getReceiptImageUrl();
+        // ✅ ---- END: เพิ่ม set-ters ใน Constructor ----
         this.paidByUser = new UserDto(bill.getPaidByUser());
         this.splitMethod = bill.getSplitMethod().toString();
         this.billDate = bill.getBillDate();

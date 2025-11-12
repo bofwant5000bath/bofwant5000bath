@@ -55,6 +55,10 @@ public class BillService {
             throw new IllegalArgumentException("Group or user not found");
         }
 
+        // ✅ 1. ดึง Exchange Rate มาเตรียมไว้ตรงนี้
+        BigDecimal exchangeRate = Optional.ofNullable(request.getExchangeRate())
+                .orElse(new BigDecimal("1.0000"));
+
         Bill newBill = new Bill();
         newBill.setGroup(groupOptional.get());
         newBill.setTitle(request.getTitle());
@@ -63,6 +67,13 @@ public class BillService {
         newBill.setPaidByUser(paidByUserOptional.get());
         newBill.setSplitMethod(request.getSplitMethod());
         newBill.setBillDate(LocalDateTime.now());
+        // ✅ ---- START: เพิ่ม Logic ดึงข้อมูลใหม่ ----
+        newBill.setCurrencyCode(Optional.ofNullable(request.getCurrencyCode()).orElse("THB"));
+        newBill.setExchangeRate(exchangeRate); // ⭐️ ใช้ตัวแปรที่เพิ่งสร้าง
+        // สองฟิลด์นี้สามารถเป็น null ได้
+        newBill.setPromptpayNumber(request.getPromptpayNumber());
+        newBill.setReceiptImageUrl(request.getReceiptImageUrl());
+        // ✅ ---- END: เพิ่ม Logic ดึงข้อมูลใหม่ ----
         Bill savedBill = billRepository.save(newBill);
 
         // ✅ Equal Split
@@ -79,15 +90,20 @@ public class BillService {
                 throw new IllegalArgumentException("No participants found for equal split.");
             }
 
-            BigDecimal equalSplitAmount = request.getAmount().divide(
+            // ✅ 2. คำนวณยอดรวม THB
+            BigDecimal totalAmountInThb = request.getAmount().multiply(exchangeRate);
+
+            // ✅ 3. คำนวณส่วนแบ่ง (เป็น THB)
+            BigDecimal equalSplitAmountInThb = totalAmountInThb.divide(
                     BigDecimal.valueOf(participants.size()), 2, RoundingMode.HALF_UP);
+
 
             for (User member : participants) {
                 BillParticipant billParticipant = new BillParticipant();
                 billParticipant.setId(new BillParticipantId(savedBill.getBillId(), member.getUserId()));
                 billParticipant.setBill(savedBill);
                 billParticipant.setUser(member);
-                billParticipant.setSplitAmount(equalSplitAmount);
+                billParticipant.setSplitAmount(equalSplitAmountInThb); // ⭐️ ใช้ค่า THB
 
                 if (member.getUserId().equals(request.getPaidByUserId())) {
                     billParticipant.setIsPaid(PaymentStatus.paid);
@@ -96,7 +112,7 @@ public class BillService {
                     Payment payment = new Payment();
                     payment.setBill(savedBill);
                     payment.setPayerUser(member);
-                    payment.setAmount(equalSplitAmount);
+                    payment.setAmount(equalSplitAmountInThb); // ⭐️ ใช้ค่า THB
                     paymentRepository.save(payment);
 
                 } else {
@@ -115,11 +131,15 @@ public class BillService {
             for (CreateBillRequest.ParticipantSplitDto participantDto : request.getParticipants()) {
                 Optional<User> participantUser = userRepository.findById(participantDto.getUserId());
                 if (participantUser.isPresent()) {
+
+                    // ✅ 4. แปลงยอด Unequal เป็น THB
+                    BigDecimal splitAmountInThb = participantDto.getAmount().multiply(exchangeRate);
+
                     BillParticipant billParticipant = new BillParticipant();
                     billParticipant.setId(new BillParticipantId(savedBill.getBillId(), participantUser.get().getUserId()));
                     billParticipant.setBill(savedBill);
                     billParticipant.setUser(participantUser.get());
-                    billParticipant.setSplitAmount(participantDto.getAmount());
+                    billParticipant.setSplitAmount(splitAmountInThb); // ⭐️ ใช้ค่า THB
 
                     if (participantDto.getUserId().equals(request.getPaidByUserId())) {
                         billParticipant.setIsPaid(PaymentStatus.paid);
@@ -128,7 +148,7 @@ public class BillService {
                         Payment payment = new Payment();
                         payment.setBill(savedBill);
                         payment.setPayerUser(participantUser.get());
-                        payment.setAmount(participantDto.getAmount());
+                        payment.setAmount(splitAmountInThb); // ⭐️ ใช้ค่า THB
                         paymentRepository.save(payment);
 
                     } else {
@@ -151,6 +171,10 @@ public class BillService {
             throw new IllegalArgumentException("Group or user not found");
         }
 
+        // ✅ 1. ดึง Exchange Rate มาเตรียมไว้ตรงนี้
+        BigDecimal exchangeRate = Optional.ofNullable(request.getExchangeRate())
+                .orElse(new BigDecimal("1.0000"));
+
         Bill newBill = new Bill();
         newBill.setGroup(groupOptional.get());
         newBill.setTitle(request.getTitle());
@@ -159,6 +183,12 @@ public class BillService {
         newBill.setPaidByUser(paidByUserOptional.get());
         newBill.setSplitMethod(request.getSplitMethod());
         newBill.setBillDate(LocalDateTime.now());
+        // ✅ ---- START: เพิ่ม Logic ดึงข้อมูลใหม่ ----
+        newBill.setCurrencyCode(Optional.ofNullable(request.getCurrencyCode()).orElse("THB"));
+        newBill.setExchangeRate(exchangeRate); // ⭐️ ใช้ตัวแปรที่เพิ่งสร้าง
+        newBill.setPromptpayNumber(request.getPromptpayNumber());
+        newBill.setReceiptImageUrl(request.getReceiptImageUrl());
+        // ✅ ---- END: เพิ่ม Logic ดึงข้อมูลใหม่ ----
         Bill savedBill = billRepository.save(newBill);
 
         // ✅ รวมยอด splitAmount ต่อ user
@@ -177,11 +207,15 @@ public class BillService {
         for (Map.Entry<Integer, BigDecimal> entry : userAmountMap.entrySet()) {
             Optional<User> participantUser = userRepository.findById(entry.getKey());
             if (participantUser.isPresent()) {
+
+                // ✅ 2. แปลงยอด Tag เป็น THB (entry.getValue() คือยอดสกุลเดิม)
+                BigDecimal splitAmountInThb = entry.getValue().multiply(exchangeRate);
+
                 BillParticipant billParticipant = new BillParticipant();
                 billParticipant.setId(new BillParticipantId(savedBill.getBillId(), participantUser.get().getUserId()));
                 billParticipant.setBill(savedBill);
                 billParticipant.setUser(participantUser.get());
-                billParticipant.setSplitAmount(entry.getValue());
+                billParticipant.setSplitAmount(splitAmountInThb); // ⭐️ ใช้ค่า THB
 
                 if (participantUser.get().getUserId().equals(request.getPaidByUserId())) {
                     billParticipant.setIsPaid(PaymentStatus.paid);
@@ -190,7 +224,7 @@ public class BillService {
                     Payment payment = new Payment();
                     payment.setBill(savedBill);
                     payment.setPayerUser(participantUser.get());
-                    payment.setAmount(entry.getValue());
+                    payment.setAmount(splitAmountInThb); // ⭐️ ใช้ค่า THB
                     paymentRepository.save(payment);
 
                 } else {
@@ -203,4 +237,3 @@ public class BillService {
         return savedBill;
     }
 }
-
