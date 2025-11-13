@@ -2,12 +2,15 @@ package com.example.backend.service;
 
 import com.example.backend.dto.CreateBillRequest;
 import com.example.backend.dto.CreateBillWithTagsRequest;
+import com.example.backend.dto.SmartPaymentDto;
+import com.example.backend.dto.UserDto;
 import com.example.backend.model.*;
-import com.example.backend.repository.BillParticipantRepository;
-import com.example.backend.repository.BillRepository;
-import com.example.backend.repository.GroupRepository;
-import com.example.backend.repository.UserRepository;
-import com.example.backend.repository.PaymentRepository;
+import com.example.backend.repository.*;
+//import com.example.backend.repository.BillParticipantRepository;
+//import com.example.backend.repository.BillRepository;
+//import com.example.backend.repository.GroupRepository;
+//import com.example.backend.repository.UserRepository;
+//import com.example.backend.repository.PaymentRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BillService {
@@ -235,5 +239,104 @@ public class BillService {
         }
 
         return savedBill;
+    }
+
+    // 1. คลาสเล็กๆ ไว้ช่วยจัดกลุ่ม (ใส่ไว้ในไฟล์ BillService.java นี่แหละ)
+    private static class UserBalance implements Comparable<UserBalance> {
+        UserDto user;
+        BigDecimal balance;
+
+        UserBalance(UserDto user, BigDecimal balance) {
+            this.user = user;
+            this.balance = balance;
+        }
+
+        @Override
+        public int compareTo(UserBalance other) {
+            return this.balance.compareTo(other.balance);
+        }
+    }
+
+    // 2. เมธอดหลักในการคำนวณ
+    public List<SmartPaymentDto> calculateSmartSettlement(Integer groupId) {
+
+        // Step 1: ดึงสมาชิกทั้งหมดในกลุ่ม
+        List<User> members = groupRepository.findUsersByGroupId(groupId);
+        if (members == null || members.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Step 2: คำนวณ "ยอดสุทธิ" ของแต่ละคน
+        Map<Integer, BigDecimal> netBalanceMap = new HashMap<>();
+        for (User member : members) {
+            Integer userId = member.getUserId();
+
+            // 2.1) เขาจ่ายไปทั้งหมดเท่าไหร่ (TotalSpent)
+            BigDecimal totalSpentByMe = billRepository.sumTotalPaidByUserInGroup(userId, groupId);
+            if (totalSpentByMe == null) totalSpentByMe = BigDecimal.ZERO;
+
+            // 2.2) เขาควรจะต้องจ่ายเท่าไหร่ (TotalOwed)
+            BigDecimal totalOwedByMe = billParticipantRepository.sumTotalOwedByUserInGroup(userId, groupId);
+            if (totalOwedByMe == null) totalOwedByMe = BigDecimal.ZERO;
+
+            // ยอดสุทธิ = จ่ายไป - ที่ควรจ่าย
+            // (ถ้า + คือ เจ้าหนี้, ถ้า - คือ ลูกหนี้)
+            BigDecimal netBalance = totalSpentByMe.subtract(totalOwedByMe);
+            netBalanceMap.put(userId, netBalance);
+        }
+
+        // Step 3: แบ่งกลุ่ม ลูกหนี้ (Debtors) และ เจ้าหนี้ (Creditors)
+        List<UserBalance> debtors = new ArrayList<>();
+        List<UserBalance> creditors = new ArrayList<>();
+
+        for (User member : members) {
+            BigDecimal balance = netBalanceMap.get(member.getUserId());
+            if (balance.compareTo(BigDecimal.ZERO) < 0) {
+                // ติดลบ = ลูกหนี้
+                debtors.add(new UserBalance(new UserDto(member), balance));
+            } else if (balance.compareTo(BigDecimal.ZERO) > 0) {
+                // เป็นบวก = เจ้าหนี้
+                creditors.add(new UserBalance(new UserDto(member), balance));
+            }
+        }
+
+        // Step 4: อัลกอริทึมจับคู่ (Greedy Algorithm)
+        List<SmartPaymentDto> transactions = new ArrayList<>();
+
+        // เรียงลำดับเพื่อให้จับคู่ง่าย
+        debtors.sort(Comparator.naturalOrder()); // น้อยสุด (ติดลบมากสุด) ไปมากสุด
+        creditors.sort(Comparator.reverseOrder()); // มากสุด (บวกมากสุด) ไปน้อยสุด
+
+        int i = 0, j = 0;
+        while (i < debtors.size() && j < creditors.size()) {
+            UserBalance debtor = debtors.get(i);
+            UserBalance creditor = creditors.get(j);
+
+            // ยอดที่ลูกหนี้ติดลบ (ค่าบวก)
+            BigDecimal debtAmount = debtor.balance.abs();
+            // ยอดที่เจ้าหนี้จะได้
+            BigDecimal creditAmount = creditor.balance;
+
+            // หาค่าน้อยสุดที่จะจ่ายกัน
+            BigDecimal paymentAmount = debtAmount.min(creditAmount);
+
+            // สร้างรายการชำระ
+            transactions.add(new SmartPaymentDto(debtor.user, creditor.user, paymentAmount));
+
+            // อัปเดตยอดคงเหลือ
+            debtor.balance = debtor.balance.add(paymentAmount);
+            creditor.balance = creditor.balance.subtract(paymentAmount);
+
+            // ถ้าลูกหนี้จ่ายหมดแล้ว (balance = 0) ก็เลื่อนไปคนถัดไป
+            if (debtor.balance.compareTo(BigDecimal.ZERO) == 0) {
+                i++;
+            }
+            // ถ้าเจ้าหนี้ได้รับครบแล้ว (balance = 0) ก็เลื่อนไปคนถัดไป
+            if (creditor.balance.compareTo(BigDecimal.ZERO) == 0) {
+                j++;
+            }
+        }
+
+        return transactions;
     }
 }

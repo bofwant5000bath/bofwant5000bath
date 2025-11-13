@@ -9,14 +9,11 @@ import com.example.backend.dto.MemberDto;
 import com.example.backend.dto.GroupInfoDetailsDto;
 import com.example.backend.dto.GroupWithMembersDto;
 import com.example.backend.dto.AddMembersRequestDto;
+import com.example.backend.dto.SmartPaymentDto;
 import com.example.backend.model.*;
-//import com.example.backend.model.BillParticipant; // ✅ เพิ่ม import
-//import com.example.backend.model.Bill;
-//import com.example.backend.model.Group;
-//import com.example.backend.model.GroupMember;
-//import com.example.backend.model.User;
 import com.example.backend.repository.*;
 import com.example.backend.service.UserService;
+import com.example.backend.service.BillService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,6 +38,7 @@ public class GroupController {
     private final PaymentRepository paymentRepository;
     private final BillParticipantRepository billParticipantRepository; // ✅ เพิ่ม Repository
     private final PinnedGroupRepository pinnedGroupRepository;
+    private final BillService billService;
 
     @Autowired
     public GroupController(UserService userService,
@@ -49,7 +47,8 @@ public class GroupController {
                            BillRepository billRepository,
                            PaymentRepository paymentRepository,
                            BillParticipantRepository billParticipantRepository,
-                           PinnedGroupRepository pinnedGroupRepository) { // ✅ เพิ่ม DI
+                           PinnedGroupRepository pinnedGroupRepository,
+                           BillService billService) { // ✅ เพิ่ม DI
         this.userService = userService;
         this.groupRepository = groupRepository;
         this.groupMemberRepository = groupMemberRepository;
@@ -57,6 +56,7 @@ public class GroupController {
         this.paymentRepository = paymentRepository;
         this.billParticipantRepository = billParticipantRepository; // ✅ เพิ่ม DI
         this.pinnedGroupRepository = pinnedGroupRepository;
+        this.billService = billService;
     }
 
     @GetMapping("/dashboard/{userId}")
@@ -345,5 +345,10 @@ public class GroupController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    @GetMapping("/{groupId}/settle")
+    public ResponseEntity<List<SmartPaymentDto>> getSmartSettlementPlan(@PathVariable Integer groupId) {
+        List<SmartPaymentDto> plan = billService.calculateSmartSettlement(groupId);
+        return ResponseEntity.ok(plan);
     }
 }
