@@ -32,7 +32,7 @@ spec:
             - name: LC_ALL
               value: C.UTF-8
             - name: MYSQL_DATABASE
-              value: devops_test2
+              value: devops_phase2
             - name: MYSQL_ROOT_PASSWORD
               value: Id_6687001
           image: mysql:8.0

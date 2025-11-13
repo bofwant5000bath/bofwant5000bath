@@ -45,6 +45,7 @@ COPY src ./src
 
 # Package the application
 RUN ./mvnw package -DskipTests
+# RUN ./mvnw package -Dmaven.test.skip=true
 
 # Stage 2: Create a minimal runtime image
 FROM eclipse-temurin:21-jdk-jammy

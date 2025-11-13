@@ -1,3 +1,4 @@
+// For Kubernetes
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import istanbul from 'vite-plugin-istanbul'
@@ -38,3 +39,47 @@ export default defineConfig({
   }
 })
 
+
+// For frontend : npm run dev
+// import { defineConfig } from 'vite'
+// import react from '@vitejs/plugin-react'
+// import istanbul from 'vite-plugin-istanbul'
+
+// // https://vitejs.dev/config/
+// export default defineConfig({
+//   plugins: [
+//     react(),
+//     istanbul({
+//       cypress: true,
+//       requireEnv: false,
+//     }),
+//   ],
+//   build: {
+//     outDir: 'dist', 
+//     sourcemap: true,
+//   },
+//   server: {
+//     // host: true, // ยังคงเปิดไว้ได้ ถ้าคุณต้องการเข้าจากมือถือในวง LAN เดียวกัน
+//     port: 5173, 
+
+//     // ❗️ 1. ลบ HMR BLOCK ออก
+//     // hmr: {
+//     //   clientPort: 80, 
+//     // },
+    
+//     // ❗️ 2. เพิ่ม PROXY BLOCK นี้เข้าไป
+//     // เพื่อบอก Vite ว่าถ้ามีการเรียก /api/ ให้ส่งต่อไปที่ backend ที่รันบน port 8080
+//     proxy: {
+//       '/api': {
+//         target: 'http://localhost:8080', // ที่อยู่ของ Backend Server ของคุณ
+//         changeOrigin: true, // จำเป็นสำหรับการทำ proxy
+//       }
+//     },
+
+//     // ❗️ 3. (แนะนำ) ลบ WATCH BLOCK ออก
+//     // 'usePolling: true' จำเป็นสำหรับ Docker แต่จะทำงานช้ากว่าบน Local ปกติ
+//     // watch: {
+//     //   usePolling: true
+//     // }
+//   }
+// })

@@ -28,7 +28,7 @@ spec:
             - name: SPRING_DATASOURCE_PASSWORD
               value: Id_6687001
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql:3306/devops_test2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
+              value: jdbc:mysql://mysql:3306/devops_phase2?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Bangkok&useUnicode=true&characterEncoding=UTF-8&characterSetResults=utf8mb4
             - name: SPRING_DATASOURCE_USERNAME
               value: root
           ports:
