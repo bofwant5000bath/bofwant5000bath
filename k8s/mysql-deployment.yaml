@@ -23,6 +23,8 @@ spec:
         io.kompose.service: mysql
     spec:
       containers:
+        - name: mysql-db
+          image: mysql:8.0.38  # ใช้ tag ล่าสุดที่รองรับ x86_64
         - args:
             - --character-set-server=utf8mb4
             - --collation-server=utf8mb4_unicode_ci

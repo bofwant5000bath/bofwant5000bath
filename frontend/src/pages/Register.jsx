@@ -2,6 +2,9 @@ import { useState, useRef } from 'react';
 import apiClient from '../api/api.js';
 import { Link, useNavigate } from 'react-router-dom';
 
+// ✅ [แก้ไข] เปลี่ยน URL รูปเริ่มต้นให้ใหม่
+const DEFAULT_PROFILE_PICTURE = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
 const Register = () => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
@@ -32,7 +35,7 @@ const Register = () => {
     }
 
     try {
-      let pictureUrl = '';
+      let pictureUrl = ''; // <-- ค่าเริ่มต้นยังเป็น string ว่าง
 
       // ✅ อัปโหลดรูปไป imgbb
       if (picture) {
@@ -58,7 +61,10 @@ const Register = () => {
         username: username,
         password: password,
         fullName: name,
-        profilePictureUrl: pictureUrl || '',
+        
+        // ✅ [แก้ไข]
+        // ถ้า pictureUrl (ที่อัปโหลด) เป็นค่าว่าง (falsy), ให้ใช้ DEFAULT_PROFILE_PICTURE แทน
+        profilePictureUrl: pictureUrl || DEFAULT_PROFILE_PICTURE,
       };
 
       const response = await apiClient.post(
@@ -72,7 +78,12 @@ const Register = () => {
       setSuccess(response.data.message);
       setError('');
       console.log('🎉 การลงทะเบียนสำเร็จ:', response.data);
-      navigate('/login');
+      
+      // นำทางไปหน้า login หลังจากลงทะเบียนสำเร็จ
+      setTimeout(() => {
+        navigate('/login');
+      }, 1000); // หน่วงเวลา 1 วินาที (ไม่บังคับ)
+
     } catch (err) {
       setError(err.response?.data?.message || 'เกิดข้อผิดพลาดในการลงทะเบียน');
       setSuccess('');
@@ -86,6 +97,19 @@ const Register = () => {
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
           สร้างบัญชีใหม่
         </h1>
+        
+        {/* แสดงข้อความ Success หรือ Error */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative mb-4" role="alert">
+            <span className="block sm:inline">{success} (กำลังไปหน้า Login...)</span>
+          </div>
+        )}
+
 
         <form onSubmit={handleSubmit}>
           {/* ส่วนเลือกรูปโปรไฟล์ */}
@@ -149,7 +173,7 @@ const Register = () => {
           {/* ชื่อผู้ใช้ */}
           <div className="mb-4">
             <label
-              className="block text-gray-700 text-sm font-bold mb-2"
+              className="block text-gray-70g-700 text-sm font-bold mb-2"
               htmlFor="username"
             >
               ชื่อผู้ใช้
@@ -165,7 +189,7 @@ const Register = () => {
                 placeholder="กรอกชื่อผู้ใช้ของคุณ"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)} // ✅ [แก้ไข] แก้บัคจาก e.g.value
                 required
               />
             </div>

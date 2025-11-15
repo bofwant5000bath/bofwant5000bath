@@ -15,31 +15,35 @@
     "cy:run:headless": "cypress run --headless"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.3.1",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.10",
     "axios": "^1.11.0",
+    "pako": "^1.0.11",
+    "promptpay-qr": "^0.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-qr-code": "^2.0.18",
     "react-router-dom": "^7.8.2"
   },
   "devDependencies": {
-    "@cypress/code-coverage": "^3.14.7",
+    "@cypress/code-coverage": "^3.7.7",
     "@eslint/js": "^9.33.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
-    "babel-plugin-istanbul": "^7.0.1",
+    "babel-plugin-istanbul": "^5.2.0",
     "cypress": "^15.4.0",
     "eslint": "^9.33.0",
     "eslint-plugin-cypress": "^5.2.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
-    "nyc": "^17.1.0",
+    "nyc": "^14.1.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.1",
     "vite": "^7.1.2",
-    "vite-plugin-istanbul": "^7.2.0"
+    "vite-plugin-istanbul": "^2.8.0"
   }
 }

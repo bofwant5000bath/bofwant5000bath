@@ -1,23 +1,40 @@
 // src/components/AddExpenseUnified.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiClient from '../api/api.js';
+
+// ✅ NEW: ใส่ API Key ของคุณที่นี่
+// คุณต้องไปสมัครที่ https://api.imgbb.com/ เพื่อให้ได้คีย์มา
+const IMGBB_API_KEY = "fd22cd3f2efd8a2f7a98628df12a7889"; 
 
 const AddExpenseUnified = () => {
   const navigate = useNavigate();
   const { groupId } = useParams();
 
+  // ... (State อื่นๆ เหมือนเดิม) ...
   const [members, setMembers] = useState([]);
-  const [amount, setAmount] = useState("1000.00");
+  const [amount, setAmount] = useState("1000.00"); 
   const [description, setDescription] = useState("ค่าอาหารเย็น");
   const [payerId, setPayerId] = useState("");
   const [splitMethod, setSplitMethod] = useState("equally");
   const [loading, setLoading] = useState(false);
-
+  const [entryAmount, setEntryAmount] = useState("1000.00"); 
+  const [selectedCurrency, setSelectedCurrency] = useState("THB");
+  const [currencies, setCurrencies] = useState({ THB: "Thai Baht" });
+  const [exchangeRate, setExchangeRate] = useState(1);
+  const baseCurrency = "THB";
+  const [promptpayNumber, setPromptpayNumber] = useState(""); 
+  const [isUploading, setIsUploading] = useState(false); 
   const [equalParticipants, setEqualParticipants] = useState([]);
   const [customParticipants, setCustomParticipants] = useState([]);
   const [tags, setTags] = useState([]);
 
+  // ✅ MODIFIED: State สำหรับไฟล์
+  const [receiptFile, setReceiptFile] = useState(null); // ตัวไฟล์ (File Object)
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState(null); // URL สำหรับโชว์ Preview
+  const fileInputRef = useRef(null); // ✅ NEW: Ref สำหรับอ้างอิง input
+
+  // ... (useEffect ทั้ง 3 ตัว (fetchMembers, fetchCurrencies, fetchRate) เหมือนเดิม) ...
   useEffect(() => {
     const fetchMembers = async () => {
       try {
@@ -60,15 +77,57 @@ const AddExpenseUnified = () => {
         alert("โหลดรายชื่อสมาชิกไม่สำเร็จ กรุณาตรวจสอบ API");
       }
     };
+
+    const fetchCurrencies = async () => {
+      try {
+        const res = await fetch("https://api.frankfurter.app/currencies");
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        setCurrencies(data);
+      } catch (err) {
+        console.error("❌ โหลดสกุลเงินล้มเหลว:", err);
+      }
+    };
+
     fetchMembers();
+    fetchCurrencies();
   }, [groupId]);
 
+  useEffect(() => {
+    const fetchRate = async () => {
+      if (selectedCurrency === baseCurrency) {
+        setExchangeRate(1);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `https://api.frankfurter.app/latest?from=${selectedCurrency}&to=${baseCurrency}`
+        );
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+        setExchangeRate(data.rates[baseCurrency] || 1);
+      } catch (err) {
+        console.error("❌ โหลดอัตราแลกเปลี่ยนล้มเหลว:", err);
+        setExchangeRate(1); // Fallback
+      }
+    };
+
+    fetchRate();
+  }, [selectedCurrency, baseCurrency]);
+
+  useEffect(() => {
+    const newTotalThb = parseFloat(entryAmount || 0) * exchangeRate;
+    setAmount(newTotalThb.toFixed(2));
+  }, [entryAmount, exchangeRate]);
+
+  // ... (formatCurrency และ handle* อื่นๆ เหมือนเดิม) ...
   const formatCurrency = (num) =>
     new Intl.NumberFormat("th-TH", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(num || 0);
 
+  // ... (handleEqualCheck, handleCustomCheck, handleCustomShareChange, etc. ... )
   const handleEqualCheck = (id) =>
     setEqualParticipants((prev) =>
       prev.map((p) =>
@@ -158,7 +217,36 @@ const AddExpenseUnified = () => {
   const getTagsTotal = () =>
     tags.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-  // ✅ Validation ป้องกันยอดรวมเป็น 0.00
+  // ✅ MODIFIED: อัปเดต handleFileChange ให้สร้าง Preview
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setReceiptFile(file);
+      // สร้าง URL ชั่วคราวสำหรับแสดงผล
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // ✅ NEW: ฟังก์ชันสำหรับลบไฟล์ (และเคลียร์ preview)
+  const handleRemoveFile = (e) => {
+    // ป้องกันไม่ให้ label ที่ครอบอยู่ทำงาน (ป้องกันหน้าต่างเลือกไฟล์เด้ง)
+    e.preventDefault(); 
+    e.stopPropagation();
+
+    setReceiptFile(null);
+    setReceiptPreviewUrl(null);
+    // รีเซ็ตค่าใน input file ที่ซ่อนอยู่
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+  };
+
+  // ✅✅✅ [แก้ไขแล้ว] ✅✅✅
+  // เพิ่มการตรวจสอบ PromptPay
   const validateBeforeSave = () => {
     const totalAmount = parseFloat(amount);
 
@@ -166,11 +254,22 @@ const AddExpenseUnified = () => {
       alert("กรุณากรอกคำอธิบาย");
       return false;
     }
-
     if (totalAmount <= 0) {
       alert("กรุณากรอกจำนวนเงินรวมให้ถูกต้อง (ต้องมากกว่า 0)");
       return false;
     }
+
+    // ✅ [เพิ่ม] ตรวจสอบ PromptPay
+    if (!promptpayNumber.trim()) {
+      alert("กรุณากรอกเบอร์PromptPay");
+      return false;
+    }
+    // ✅ [เพิ่ม] ตรวจสอบว่าเป็นเบอร์ 10 หลักหรือไม่
+    if (!/^\d{10}$/.test(promptpayNumber)) {
+        alert("กรุณากรอกเบอร์PromptPay 10 หลักให้ถูกต้อง");
+        return false;
+    }
+
 
     if (splitMethod === "equally") {
       const checked = equalParticipants.filter((p) => p.isChecked);
@@ -179,7 +278,6 @@ const AddExpenseUnified = () => {
         return false;
       }
     }
-
     if (splitMethod === "custom") {
       for (const p of customParticipants) {
         if (p.isChecked && parseFloat(p.share) <= 0) {
@@ -201,14 +299,12 @@ const AddExpenseUnified = () => {
         return false;
       }
     }
-
     if (splitMethod === "tags") {
       for (const tag of tags) {
         if (!tag.name.trim()) {
           alert("กรุณาตั้งชื่อแท็กทั้งหมด");
           return false;
         }
-        
         let memberShareTotal = 0;
         for (const member of tag.members) {
           if (member.isChecked) {
@@ -224,8 +320,6 @@ const AddExpenseUnified = () => {
             memberShareTotal += memberShare;
           }
         }
-
-        // ✅ START: เพิ่มโค้ดส่วนตรวจสอบยอดรวมในแต่ละแท็ก
         const tagTotal = parseFloat(tag.amount) || 0;
         if (tag.members.filter(m => m.isChecked).length > 0 && Math.abs(memberShareTotal - tagTotal) > 0.01) {
           alert(
@@ -235,9 +329,7 @@ const AddExpenseUnified = () => {
           );
           return false;
         }
-        // ✅ END: เพิ่มโค้ดส่วนตรวจสอบ
       }
-
       const totalTags = getTagsTotal();
       if (totalTags <= 0) {
         alert("กรุณากรอกจำนวนเงินในแต่ละแท็กให้ถูกต้อง");
@@ -252,17 +344,68 @@ const AddExpenseUnified = () => {
         return false;
       }
     }
-
     return true;
   };
 
+  // ✅ MODIFIED: อัปเดต handleSave
   const handleSave = async () => {
     if (!validateBeforeSave()) return;
+
+    if (IMGBB_API_KEY === "YOUR_IMGBB_API_KEY_HERE") {
+      alert("กรุณาใส่ IMGBB_API_KEY ในโค้ดก่อนครับ");
+      return;
+    }
+
+    setLoading(true); // เริ่ม loading
+    let finalReceiptUrl = null; // ใช้ null เป็นค่าเริ่มต้น (ตาม JSON ตัวอย่าง)
+
+    // --- 1. อัปโหลดไฟล์ไป ImgBB (ถ้ามีไฟล์) ---
+    if (receiptFile) {
+      setIsUploading(true); // แสดง "กำลังอัปโหลด..."
+      
+      const formData = new FormData();
+      formData.append('image', receiptFile);
+
+      try {
+        console.log("... กำลังอัปโหลดไป ImgBB...");
+        const res = await fetch(
+          `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+
+        const data = await res.json();
+        
+        if (data.success) {
+          finalReceiptUrl = data.data.url; // เอา URL ที่ได้มา
+          console.log("... อัปโหลดสำเร็จ:", finalReceiptUrl);
+        } else {
+          // ถ้า ImgBB ส่ง error กลับมา
+          throw new Error(data.error?.message || 'อัปโหลดไฟล์ล้มเหลว');
+        }
+
+      } catch (uploadErr) {
+        console.error("❌ การอัปโหลดไฟล์ล้มเหลว:", uploadErr);
+        alert(`อัปโหลดใบเสร็จล้มเหลว: ${uploadErr.message}`);
+        setLoading(false);
+        setIsUploading(false);
+        return; // หยุดการทำงาน
+      }
+      
+      setIsUploading(false); // อัปโหลดเสร็จ
+    }
+
+    // --- 2. สร้าง Payload ---
     let payload = {
       groupId: Number(groupId),
       title: description,
       description: description,
-      amount: parseFloat(amount),
+      
+      // (1) amount หลัก (ใช้ค่าที่กรอก)
+      amount: parseFloat(entryAmount), 
+      
       paidByUserId: Number(payerId),
       splitMethod:
         splitMethod === "equally"
@@ -270,36 +413,50 @@ const AddExpenseUnified = () => {
           : splitMethod === "custom"
           ? "unequal"
           : "by_tag",
+      
+      currencyCode: selectedCurrency,
+      exchangeRate: exchangeRate,
+      promptpayNumber: promptpayNumber, // [แก้ไข] ไม่ต้อง || null แล้ว เพราะมัน required
+      receiptImageUrl: finalReceiptUrl, // ✅ ใส่ URL ที่ได้จาก ImgBB
     };
 
+    // --- (2) Logic เพิ่ม participants / tags ---
+    
     if (splitMethod === "equally") {
       payload.selectedParticipantIds = equalParticipants
         .filter((p) => p.isChecked)
         .map((p) => p.id);
     } else if (splitMethod === "custom") {
+      
+      // ✅✅✅ CHANGE HERE ✅✅✅
+      // แปลงค่า p.share (THB) กลับเป็นสกุลเงินเดิมก่อนส่ง
       payload.participants = customParticipants
         .filter((p) => p.isChecked)
         .map((p) => ({
           userId: p.id,
-          amount: parseFloat(p.share),
+          amount: parseFloat(p.share) / exchangeRate, // <-- หารด้วยอัตราแลกเปลี่ยน
         }));
+        
     } else if (splitMethod === "tags") {
+      
+      // ✅✅✅ CHANGE HERE ✅✅✅
+      // แปลงค่า tag.amount และ m.share (THB) กลับเป็นสกุลเงินเดิม
       payload.tags = tags.map((tag) => ({
         tagName: tag.name,
-        tagAmount: parseFloat(tag.amount),
+        tagAmount: parseFloat(tag.amount) / exchangeRate, // <-- หารด้วยอัตราแลกเปลี่ยน
         participants: tag.members
           .filter((m) => m.isChecked)
           .map((m) => ({
             userId: m.userId,
-            amount: parseFloat(m.share) || 0,
+            amount: (parseFloat(m.share) || 0) / exchangeRate, // <-- หารด้วยอัตราแลกเปลี่ยน
           })),
       }));
     }
 
-    console.log("📦 Payload:", payload);
+    console.log("📦 Final Payload:", payload);
 
+    // --- 3. ส่งข้อมูลไป Backend (เหมือนเดิม) ---
     try {
-      setLoading(true);
       const endpoint =
         splitMethod === "tags"
           ? "/bills/create/by-tag"
@@ -312,11 +469,14 @@ const AddExpenseUnified = () => {
       alert("เกิดข้อผิดพลาดจาก backend");
     } finally {
       setLoading(false);
+      setIsUploading(false);
     }
   };
 
-  // ✅ UI เดิมทั้งหมด (ไม่แตะ layout)
+  // ... (renderSplitContent เหมือนเดิม 100%) ...
+  // (ส่วนนี้ยังคงใช้ `amount` (ยอด THB) ในการแสดงผลและคำนวณ)
   const renderSplitContent = () => {
+    // ... (โค้ดส่วนนี้ไม่เปลี่ยนแปลง) ...
     switch (splitMethod) {
       case "equally":
         const checkedCount = equalParticipants.filter((p) => p.isChecked).length;
@@ -519,9 +679,11 @@ const AddExpenseUnified = () => {
     }
   };
 
+
   return (
     <div className="bg-gray-100 min-h-screen font-sans">
       <header className="bg-white shadow-md p-4">
+        {/* ... (Header เหมือนเดิม) ... */}
         <div className="container mx-auto flex items-center space-x-4">
           <button
             onClick={() => navigate(-1)}
@@ -538,22 +700,49 @@ const AddExpenseUnified = () => {
       <main className="flex-grow p-4 container mx-auto">
         <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="space-y-6">
+            
+            {/* ... (Amount, Currency, Description sections เหมือนเดิม) ... */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 จำนวนเงิน
               </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <span className="text-gray-500 sm:text-sm">฿</span>
+              <div className="mt-1 flex gap-2">
+                <div className="relative rounded-md shadow-sm flex-grow">
+                  <input
+                    type="number"
+                    value={entryAmount}
+                    onChange={(e) => setEntryAmount(e.target.value)}
+                    className="block w-full sm:text-sm border-gray-300 rounded-md"
+                    placeholder="0.00"
+                  />
                 </div>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="block w-full pl-7 sm:text-sm border-gray-300 rounded-md"
-                />
+                <div className="relative w-40">
+                  <select
+                    value={selectedCurrency}
+                    onChange={(e) => setSelectedCurrency(e.target.value)}
+                    className="block w-full border-gray-300 rounded-md shadow-sm"
+                  >
+                    {Object.keys(currencies).sort().map((code) => (
+                      <option key={code} value={code}>
+                        {code}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
+
+            {selectedCurrency !== baseCurrency && (
+              <div className="bg-blue-50 text-blue-700 p-3 rounded-md text-sm">
+                <p>
+                  1 {selectedCurrency} = {exchangeRate.toFixed(4)} {baseCurrency}
+                  <span className="text-blue-500"> (อัตราแลกเปลี่ยนตามเวลาจริง)</span>
+                </p>
+                <p className="font-bold mt-1">
+                  ยอดรวมโดยประมาณ: {formatCurrency(amount)} {baseCurrency}
+                </p>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -568,6 +757,72 @@ const AddExpenseUnified = () => {
               />
             </div>
 
+            {/* ✅ START: MODIFIED UI (RECEIPT UPLOAD) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                แนบใบเสร็จ (ไม่บังคับ)
+              </label>
+              
+              {/* input ที่ซ่อนไว้ ถูกเรียกใช้โดย label */}
+              <input 
+                id="receipt-upload" 
+                name="receipt-upload" 
+                type="file" 
+                className="sr-only" 
+                onChange={handleFileChange} 
+                accept="image/png, image/jpeg, image/gif" // ImgBB รับเฉพาะรูปภาพ
+                ref={fileInputRef} // เชื่อม ref
+              />
+              
+              {/* นี่คือกรอบทั้งหมดที่คลิกได้ */}
+              <label
+                htmlFor="receipt-upload"
+                className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-indigo-400"
+              >
+                <div className="space-y-1 text-center">
+                  
+                  {/* แสดงรูป Preview หรือ ไอคอน */}
+                  {receiptPreviewUrl ? (
+                    <div>
+                      <img 
+                        src={receiptPreviewUrl} 
+                        alt="รูปใบเสร็จ" 
+                        className="mx-auto h-32 w-auto object-contain rounded-md" // เพิ่ม h-32
+                      />
+                      <p className="text-xs text-gray-600 mt-2">{receiptFile.name}</p>
+                      <button
+                        type="button"
+                        onClick={handleRemoveFile}
+                        className="mt-1 text-sm font-medium text-red-600 hover:text-red-800"
+                      >
+                        ลบไฟล์
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <path d="M28 8H12a4 4
+ 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <span className="relative bg-white rounded-md font-medium text-indigo-600">
+                          อัปโหลดไฟล์
+                        </span>
+                        <p className="pl-1">หรือลากมาวาง</p>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF (ImgBB)
+                      </p>
+                    </>
+                  )}
+
+                </div>
+              </label>
+            </div>
+            {/* ✅ END: MODIFIED UI (RECEIPT UPLOAD) */}
+
+
+            {/* ... (Payer) ... */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 ผู้จ่าย
@@ -585,10 +840,30 @@ const AddExpenseUnified = () => {
               </select>
             </div>
 
+            {/* ✅✅✅ [แก้ไขแล้ว] ✅✅✅ */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                เบอร์PromptPay
+              </label>
+              <input
+                type="tel"
+                value={promptpayNumber}
+                onChange={(e) => setPromptpayNumber(e.target.value)}
+                className="mt-1 shadow-sm block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="08xxxxxxxx"
+                maxLength={10}
+                required // เพิ่ม attribute นี้
+              />
+            </div>
+            {/* ✅ END: MODIFIED UI (PROMPTPAY) */}
+
+
+            {/* --- SECTION: SPLIT METHOD (เหมือนเดิม) --- */}
             <div>
               <h3 className="text-lg font-medium text-gray-900">
                 ผู้เข้าร่วมและวิธีแบ่ง
               </h3>
+              {/* ... (fieldset เหมือนเดิม) ... */}
               <fieldset className="mt-4 flex space-x-6">
                 <label className="flex items-center">
                   <input
@@ -638,6 +913,7 @@ const AddExpenseUnified = () => {
           </div>
         </div>
 
+        {/* ... (Footer buttons เหมือนเดิม) ... */}
         <div className="mt-8 flex justify-end space-x-3">
           <button
             onClick={() => navigate(-1)}
@@ -648,9 +924,11 @@ const AddExpenseUnified = () => {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="inline-flex justify-center py-2 px-4 border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            className="inline-flex justify-center py-2 px-4 border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
           >
-            {loading ? "กำลังบันทึก..." : "บันทึกค่าใช้จ่าย"}
+            {loading 
+              ? (isUploading ? "กำลังอัปโหลด..." : "กำลังบันทึก...") 
+              : "บันทึกค่าใช้จ่าย"}
           </button>
         </div>
       </main>
