@@ -1,0 +1,15 @@
+[
+  {
+    "paymentId": 5,
+    "billId": 50,
+    "payerUser": {
+      "userId": 3,
+      "fullName": "Charlie",
+      "username": "charlie",
+      "profilePictureUrl": "https://via.placeholder.com/150"
+    },
+    "amount": 100.00,
+    "paymentDate": "2025-11-16T10:00:00Z",
+    "slipImageUrl": null
+  }
+]

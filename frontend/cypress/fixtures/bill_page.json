@@ -1,0 +1,67 @@
+{
+  "groupMembers": [
+    {
+      "userId": 1,
+      "fullName": "Alice",
+      "username": "alice",
+      "profilePictureUrl": "https://randomuser.me/api/portraits/women/75.jpg"
+    },
+    {
+      "userId": 2,
+      "fullName": "Bob",
+      "username": "bob",
+      "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg"
+    },
+    {
+      "userId": 3,
+      "fullName": "Charlie",
+      "username": "charlie",
+      "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg"
+    }
+  ],
+  "bills": [
+    {
+      "billId": 50,
+      "title": "ค่าอาหารมื้อใหญ่",
+      "description": "ร้านอาหาร A",
+      "amount": 1500.00,
+      "currencyCode": "THB",
+      "exchangeRate": 1.00,
+      "amountInThb": 1500.00,
+      "promptpayNumber": "0891234567",
+      "receiptImageUrl": null,
+      "paidByUser": {
+        "userId": 1,
+        "fullName": "Alice",
+        "username": "alice",
+        "profilePictureUrl": "https://randomuser.me/api/portraits/women/75.jpg"
+      },
+      "splitMethod": "equal",
+      "billDate": "2025-11-15T18:00:00Z",
+      "participants": [
+        {
+          "participantId": 101,
+          "user": {
+            "userId": 2,
+            "fullName": "Bob",
+            "username": "bob",
+            "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg"
+          },
+          "splitAmount": 500.00,
+          "status": "unpaid"
+        },
+        {
+          "participantId": 102,
+          "user": {
+            "userId": 3,
+            "fullName": "Charlie",
+            "username": "charlie",
+            "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg"
+          },
+          "splitAmount": 500.00,
+          "status": "partial"
+        }
+      ]
+    }
+  ]
+}

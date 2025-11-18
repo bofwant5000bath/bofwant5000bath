@@ -1,0 +1,12 @@
+[
+  {
+    "fromUser": { "userId": 3, "fullName": "Charlie", "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg" },
+    "toUser": { "userId": 1, "fullName": "Test User", "profilePictureUrl": "https://picsum.photos/id/10/150" },
+    "amount": 250.00
+  },
+  {
+    "fromUser": { "userId": 2, "fullName": "Bob", "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg" },
+    "toUser": { "userId": 1, "fullName": "Test User", "profilePictureUrl": "https://picsum.photos/id/10/150" },
+    "amount": 250.00
+  }
+]

@@ -1,0 +1,74 @@
+{
+  "groupName": "ทริปเที่ยวทะเล",
+  "groupMembers": [
+    { "userId": 1, "fullName": "Test User", "profilePictureUrl": "https://picsum.photos/id/10/150" },
+    { "userId": 2, "fullName": "Bob", "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg" },
+    { "userId": 3, "fullName": "Charlie", "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg" }
+  ],
+  "bills": [
+    {
+      "billId": 101,
+      "title": "ค่าอาหารเย็น (บิล 101)",
+      "amountInThb": 1000.00,
+      "billDate": "2025-11-15T12:00:00Z",
+      "promptpayNumber": "0810001111",
+      "paidByUser": {
+        "userId": 1,
+        "fullName": "Test User",
+        "profilePictureUrl": "https://picsum.photos/id/10/150" 
+      },
+      "participants": [
+        {
+          "user": {
+            "userId": 2,
+            "fullName": "Bob",
+            "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg" 
+          },
+          "splitAmount": 500.00,
+          "status": "unpaid"
+        },
+        {
+          "user": {
+            "userId": 3,
+            "fullName": "Charlie",
+            "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg" 
+          },
+          "splitAmount": 500.00,
+          "status": "unpaid"
+        }
+      ]
+    },
+    {
+      "billId": 102,
+      "title": "ค่าที่พัก (บิล 102)",
+      "amountInThb": 500.00,
+      "billDate": "2025-11-14T18:00:00Z",
+      "promptpayNumber": "0820002222",
+      "paidByUser": {
+        "userId": 2,
+        "fullName": "Bob",
+        "profilePictureUrl": "https://randomuser.me/api/portraits/men/75.jpg" 
+      },
+      "participants": [
+        {
+          "user": {
+            "userId": 1,
+            "fullName": "Test User",
+            "profilePictureUrl": "https://picsum.photos/id/10/150" 
+          },
+          "splitAmount": 250.00,
+          "status": "unpaid"
+        },
+        {
+          "user": {
+            "userId": 3,
+            "fullName": "Charlie",
+            "profilePictureUrl": "https://randomuser.me/api/portraits/men/32.jpg" 
+          },
+          "splitAmount": 250.00,
+          "status": "unpaid"
+        }
+      ]
+    }
+  ]
+}

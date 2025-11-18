@@ -1,0 +1,20 @@
+[
+  {
+    "groupId": 101,
+    "groupName": "กลุ่มเก่า",
+    "isPinned": false,
+    "members": [
+      { "userId": 1, "fullName": "Test User" },
+      { "userId": 3, "fullName": "Charlie" }
+    ]
+  },
+  {
+    "groupId": 102,
+    "groupName": "กลุ่มทริปญี่ปุ่น",
+    "isPinned": true,
+    "members": [
+      { "userId": 1, "fullName": "Test User" },
+      { "userId": 2, "fullName": "Bob" }
+    ]
+  }
+]

@@ -1,14 +1,24 @@
 {
-  "totalOwed": 1000.00,
-  "totalReceivable": 2500.00,
+  "totalOwed": 500.00,
+  "totalReceivable": 1200.50,
   "groups": [
     {
       "groupId": 1,
       "groupName": "ทริปเที่ยวทะเล",
       "memberCount": 3,
-      "groupTotalAmount": 9300.00,
-      "myDebt": 1000.00,
-      "othersDebtToMe": 2500.00
+      "groupTotalAmount": 2500.00,
+      "myDebt": 150.00,
+      "othersDebtToMe": 800.50,
+      "pinned": true
+    },
+    {
+      "groupId": 2,
+      "groupName": "ค่าห้องเดือนตุลา",
+      "memberCount": 2,
+      "groupTotalAmount": 3000.00,
+      "myDebt": 350.00,
+      "othersDebtToMe": 400.00,
+      "pinned": false
     }
   ]
-}
+} 
