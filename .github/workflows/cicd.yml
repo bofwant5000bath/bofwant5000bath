@@ -136,8 +136,8 @@ jobs:
           }
 
           # 3. เพิ่ม Path ลงใน Environment Variable สำหรับ Job นี้โดยเขียนลงในไฟล์ $GITHUB_PATH
-          Write-Host "Adding $KUBE_PATH to PATH via $env:GITHUB_PATH"
-          Add-Content -Path $env:GITHUB_PATH -Value $KUBE_PATH
+          # **สำคัญ: ไม่ต้องใช้ Add-Content แล้ว ให้ใช้คำสั่ง echo ธรรมดาที่ปลอดภัยกว่าใน PowerShell เพื่อจัดการ $GITHUB_PATH**
+          echo "$KUBE_PATH" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # 2. ตั้งค่าการเชื่อมต่อกับ Kubernetes Cluster โดยใช้ Kubeconfig
       - name: 🔐 Set up Kubernetes Context
