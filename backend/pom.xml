@@ -81,6 +81,21 @@
         </dependency>
     </dependencies>
 
+	<!-- ตัวระเบิด-->
+		<dependencies>
+	    <!-- ... dependency ตัวอื่นๆ ที่มีอยู่แล้ว ... -->
+	
+	    <!-- ✅ เพิ่มตัวนี้เข้าไปครับ (Spring Security) -->
+	    <dependency>
+	        <groupId>org.springframework.boot</groupId>
+	        <artifactId>spring-boot-starter-security</artifactId>
+	    </dependency>
+	
+	    <!-- ... dependency ตัวอื่นๆ ... -->
+	</dependencies>
+
+	
+
 	<build>
 		<plugins>
 			<plugin>
