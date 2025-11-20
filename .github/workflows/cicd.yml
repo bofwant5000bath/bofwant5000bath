@@ -60,7 +60,10 @@ jobs:
         with:
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:latest
+          # **สำคัญ:** เพิ่มการติด tag ด้วย ID ของ commit
+          tags: | 
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:${{ github.sha }}
 
   # This job builds, tests, and publishes the backend
   build-test-and-publish-backend:
@@ -98,5 +101,50 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:latest
+          # **สำคัญ:** เพิ่มการติด tag ด้วย ID ของ commit
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:${{ github.sha }}
+            
+
+  # This job deploys the built images to the Kubernetes cluster
+  deploy-to-kubernetes:
+    runs-on: ubuntu-latest
+    # กำหนดให้ Job นี้ต้องรอให้ทั้ง Frontend และ Backend Build/Push สำเร็จก่อน
+    needs: [build-test-and-publish-frontend, build-test-and-publish-backend] 
+    
+    # กำหนดเงื่อนไขให้ Deploy เมื่อมีการ Push ไปที่ main branch เท่านั้น
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' 
+
+    steps:
+      # 1. Checkout code เพื่อดึงไฟล์ Manifests (ที่อยู่ในโฟลเดอร์ k8s/)
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      # 2. ตั้งค่าการเชื่อมต่อกับ Kubernetes Cluster โดยใช้ Kubeconfig
+      - name: 🔐 Set up Kubernetes Context
+        uses: azure/k8s-set-context@v4
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG_DATA }} # ใช้ Secret KUBECONFIG_DATA
+          
+      # 3. Deploy Kubernetes Manifests
+      - name: 🚀 Deploy to Kubernetes Cluster
+        uses: azure/k8s-deploy@v5
+        with:
+          action: deploy
+          # ระบุไฟล์ Manifests ทั้ง 7 ไฟล์ที่อยู่ใน k8s/
+          manifests: |
+            k8s/mysql-data-persistentvolumeclaim.yaml
+            k8s/mysql-deployment.yaml
+            k8s/mysql-service.yaml
+            k8s/backend-deployment.yaml
+            k8s/backend-service.yaml
+            k8s/frontend-deployment.yaml
+            k8s/frontend-service.yaml
+          # **สำคัญ:** การแทนที่ Image Tag: 
+          # เปลี่ยน Image ใน Manifests ให้อ้างถึง Image ที่มี SHA Tag ล่าสุดที่เพิ่ง Build
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:${{ github.sha }}
 
