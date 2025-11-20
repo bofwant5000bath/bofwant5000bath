@@ -122,6 +122,13 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
+      # 1.5. 🚨 เพิ่ม Step นี้เพื่อตั้งค่า PATH สำหรับ kubectl บน Windows
+      - name: 🛠️ Add kubectl to PATH
+        run: |
+          $KUBE_PATH = "C:\Program Files\Docker\Docker\resources\bin"
+          echo "Adding $KUBE_PATH to PATH"
+          echo "::add-path::$KUBE_PATH"
+
       # 2. ตั้งค่าการเชื่อมต่อกับ Kubernetes Cluster โดยใช้ Kubeconfig
       - name: 🔐 Set up Kubernetes Context
         uses: azure/k8s-set-context@v4
