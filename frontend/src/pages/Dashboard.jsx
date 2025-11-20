@@ -13,7 +13,7 @@ const Dashboard = () => {
     ...data,
     groups: data.groups.map((g) => ({
       ...g,
-      isPinned: Boolean(g.pinned)  // <----- FIX
+      isPinned: Boolean(g.pinned)
     })),
   });
 
@@ -32,7 +32,8 @@ const Dashboard = () => {
         const response = await apiClient.get(
           `/groups/dashboard/${userId}`,
           {
-            params: { _: new Date().getTime() } // prevent cache
+            params: { _: new Date().getTime() }, // prevent cache
+            withCredentials: true // ✅ บังคับส่ง Cookie ไปด้วยตรงนี้เลย (แก้ 403)
           }
         );
 
@@ -53,6 +54,10 @@ const Dashboard = () => {
         setError("ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
         if (err.response && err.response.status === 401) {
           navigate("/login");
+        }
+        // เพิ่มการจัดการ error 403
+        if (err.response && err.response.status === 403) {
+            console.error("Cookie might be missing or session expired");
         }
       } finally {
         setLoading(false);
@@ -89,6 +94,8 @@ const Dashboard = () => {
         userId: parseInt(userId), 
         groupId: groupId,
         pin: isPin,
+      }, {
+        withCredentials: true // ✅ อย่าลืมใส่ตรงนี้ด้วยครับ เวลาปักหมุดจะได้ไม่ Error
       });
     } catch (err) {
       console.error("Error toggling pin:", err);
