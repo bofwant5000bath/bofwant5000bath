@@ -85,11 +85,11 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ⭐ Session Management (แก้ 403 Cookie) ⭐ -->
+        <!-- ⭐ Session Management (บังคับใส่ Version ให้ผ่าน Build) ⭐ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-session</artifactId>
-            <!-- ✅ ไม่ต้องใส่ version เพราะ Parent จัดการให้ -->
+            <version>3.3.4</version> <!-- ✅ ใส่ Version ตาม Parent เพื่อให้ Build ผ่าน -->
         </dependency>
 
     </dependencies> 
