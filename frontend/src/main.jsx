@@ -3,16 +3,16 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-// ✅ 1. Import ทั้ง axios ปกติ และ apiClient ของเรามา
+// ✅ 1. Import มาทั้ง 2 ตัวเลย (axios ปกติ และ apiClient ที่คุณใช้ใน Dashboard)
 import axios from 'axios'
 import apiClient from './api/api.js' 
 
-// ✅ 2. สั่งเปิด withCredentials ทั้ง 2 ตัวเลย (กันเหนียว)
-// อันนี้สำหรับเวลาใช้ axios.get() ตรงๆ
+// ✅ 2. สั่งเปิด withCredentials ให้ axios ตัวปกติ (เผื่อหน้าไหนใช้)
 axios.defaults.withCredentials = true; 
 
-// อันนี้สำหรับหน้าที่ใช้ apiClient.get() (เช่น Dashboard ของคุณ)
-if (apiClient.defaults) {
+// ✅ 3. สั่งเปิด withCredentials ให้ apiClient (ตัวนี้แหละที่ Dashboard.jsx ใช้อยู่)
+// ต้องเช็คก่อนว่ามีค่าไหม เพื่อความปลอดภัย
+if (apiClient && apiClient.defaults) {
     apiClient.defaults.withCredentials = true;
 }
 
