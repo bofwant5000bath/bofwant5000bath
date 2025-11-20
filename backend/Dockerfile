@@ -37,6 +37,9 @@ COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
 # Add execute permissions to the Maven wrapper
+
+RUN rm -rf /root/.m2/repository/org/springframework/boot/spring-boot-starter-session
+
 RUN chmod +x ./mvnw
 RUN ./mvnw dependency:go-offline
 
