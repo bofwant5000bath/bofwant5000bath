@@ -89,7 +89,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ⭐⭐⭐ เพิ่มตัวนี้เพื่อจัดการ Session (แก้ 403 Cookie) ⭐⭐⭐ -->
+        <!-- ⭐⭐⭐ เพิ่มตัวนี้เพื่อจัดการ Session (ไม่ต้องใส่ Version) ⭐⭐⭐ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-session</artifactId>
