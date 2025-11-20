@@ -11,11 +11,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-// ✅ ต้องมี import ตัวนี้เพิ่มมา
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,13 +24,13 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // ✅ เพิ่ม Session Management (แก้ 403)
+
+            // ✅ จำเป็นมาก: เพื่อให้ Session ทำงานหลัง Login
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // สร้าง Session ถ้าจำเป็น (เช่น Login)
-                .maximumSessions(1) // จำกัดให้ 1 user login ได้ 1 ที่
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .maximumSessions(1)
             )
-            
+
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
                 .requestMatchers("/error").permitAll()
@@ -46,19 +44,21 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // ✅ รวม IP ทั้งหมดของคุณไว้ในที่เดียว
+
+        // ⭐ โดเมนของคุณ (ต้องกำหนดตรง ๆ เท่านั้น)
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",               // Dev (Vite)
-            "https://bofwant5000bath.zeabur.app",  // Production (Zeabur)
-            "http://localhost:30080",              // K8s Local
-            "http://192.168.43.60:30080",          // IP Fah
-            "http://192.168.43.227:30080",         // IP Bell
-            "http://172.20.10.2:30080"             // IP Other
+            "http://localhost:5173",
+            "https://bofwant5000bath.zeabur.app",
+            "http://localhost:30080",
+            "http://192.168.43.60:30080",
+            "http://192.168.43.227:30080",
+            "http://172.20.10.2:30080"
         ));
-        
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // ⭐ อนุญาตส่ง Cookie
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
