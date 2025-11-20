@@ -85,11 +85,11 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ⭐ Session Management (บังคับใส่ Version ให้ผ่าน Build) ⭐ -->
+        <!-- ⭐⭐⭐ FIX: เปลี่ยน Starter ตัวที่ไม่มีอยู่จริง เป็นตัวที่ใช้กับ JDBC Session (Session ถูกต้อง) ⭐⭐⭐ -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-session</artifactId>
-            <version>3.3.4</version> <!-- ✅ ใส่ Version ตาม Parent เพื่อให้ Build ผ่าน -->
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+            <!-- ไม่ต้องใส่ version เพราะ Spring Boot Parent จัดการให้ -->
         </dependency>
 
     </dependencies> 
