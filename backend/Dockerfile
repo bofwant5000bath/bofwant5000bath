@@ -31,15 +31,18 @@
 
 
 # Stage 1: Build the application using Maven
+# Stage 1: Build the application using Maven
 FROM maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /app
+
+# ✅ FIX: บังคับล้าง Maven Cache ทั้งหมด (ต้องอยู่บรรทัดแรกๆ)
+# ล้างทั้ง .m2 repository เพื่อให้ Docker โหลดทุกอย่างใหม่หมด
+RUN rm -rf /root/.m2
+
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
 # Add execute permissions to the Maven wrapper
-
-RUN rm -rf /root/.m2/repository/org/springframework/boot/spring-boot-starter-session
-
 RUN chmod +x ./mvnw
 RUN ./mvnw dependency:go-offline
 
