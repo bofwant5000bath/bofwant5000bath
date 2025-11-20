@@ -122,12 +122,22 @@ jobs:
       - name: ⬇️ Checkout code
         uses: actions/checkout@v4
 
-      # 1.5. 🚨 เพิ่ม Step นี้เพื่อตั้งค่า PATH สำหรับ kubectl บน Windows
+      # 1.5. 🚨 แก้ไข Step นี้เพื่อเพิ่ม kubectl ลงใน PATH โดยใช้ GITHUB_PATH
       - name: 🛠️ Add kubectl to PATH
+        shell: powershell # กำหนดให้ใช้ PowerShell อย่างชัดเจน
         run: |
+          # 1. กำหนด Path ที่ถูกต้องของ kubectl
           $KUBE_PATH = "C:\Program Files\Docker\Docker\resources\bin"
-          echo "Adding $KUBE_PATH to PATH"
-          echo "::add-path::$KUBE_PATH"
+          
+          # 2. ตรวจสอบว่า Path มีอยู่จริง (Optional)
+          if (-not (Test-Path -Path "$KUBE_PATH\kubectl.exe")) {
+            Write-Host "Error: kubectl.exe not found at $KUBE_PATH. Check Docker Desktop installation."
+            exit 1
+          }
+
+          # 3. เพิ่ม Path ลงใน Environment Variable สำหรับ Job นี้โดยเขียนลงในไฟล์ $GITHUB_PATH
+          Write-Host "Adding $KUBE_PATH to PATH via $env:GITHUB_PATH"
+          Add-Content -Path $env:GITHUB_PATH -Value $KUBE_PATH
 
       # 2. ตั้งค่าการเชื่อมต่อกับ Kubernetes Cluster โดยใช้ Kubeconfig
       - name: 🔐 Set up Kubernetes Context
