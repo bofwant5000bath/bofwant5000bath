@@ -30,8 +30,9 @@
 		<java.version>21</java.version>
 	</properties>
     
-    <!-- ✅ รวมทุกอย่างไว้ใน dependencies ก้อนเดียวตรงนี้ครับ -->
+    <!-- ✅ แก้ไข: รวมและจัดระเบียบ Dependencies ทั้งหมด -->
     <dependencies>
+        <!-- H2 Database (สำหรับ Test) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -53,11 +54,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.h2database</groupId> <artifactId>h2</artifactId>
-            <scope>test</scope>
         </dependency>
 
 
@@ -89,13 +85,14 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ⭐⭐⭐ เพิ่มตัวนี้เพื่อจัดการ Session (แก้ 403 Cookie) ⭐⭐⭐ -->
+        <!-- ⭐ Session Management (แก้ 403 Cookie) ⭐ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-session</artifactId>
+            <!-- ✅ ไม่ต้องใส่ version เพราะ Parent จัดการให้ -->
         </dependency>
 
-    </dependencies> <!-- ปิด dependencies จบแค่ตรงนี้ -->
+    </dependencies> 
 
 	<build>
 		<plugins>
