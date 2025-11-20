@@ -83,10 +83,16 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ ย้าย Security เข้ามารวมในบ้านเดียวกันตรงนี้แล้วครับ -->
+        <!-- Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- ⭐⭐⭐ เพิ่มตัวนี้เพื่อจัดการ Session (แก้ 403 Cookie) ⭐⭐⭐ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-session</artifactId>
         </dependency>
 
     </dependencies> <!-- ปิด dependencies จบแค่ตรงนี้ -->
