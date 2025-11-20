@@ -29,12 +29,15 @@
 	<properties>
 		<java.version>21</java.version>
 	</properties>
+    
+    <!-- ✅ รวมทุกอย่างไว้ใน dependencies ก้อนเดียวตรงนี้ครับ -->
     <dependencies>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+
         <!-- Spring Boot Starter Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -79,22 +82,14 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-    </dependencies>
 
-	<!-- ตัวระเบิด-->
-		<dependencies>
-	    <!-- ... dependency ตัวอื่นๆ ที่มีอยู่แล้ว ... -->
-	
-	    <!-- ✅ เพิ่มตัวนี้เข้าไปครับ (Spring Security) -->
-	    <dependency>
-	        <groupId>org.springframework.boot</groupId>
-	        <artifactId>spring-boot-starter-security</artifactId>
-	    </dependency>
-	
-	    <!-- ... dependency ตัวอื่นๆ ... -->
-	</dependencies>
+        <!-- ✅ ย้าย Security เข้ามารวมในบ้านเดียวกันตรงนี้แล้วครับ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
 
-	
+    </dependencies> <!-- ปิด dependencies จบแค่ตรงนี้ -->
 
 	<build>
 		<plugins>
