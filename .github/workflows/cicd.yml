@@ -133,27 +133,32 @@ jobs:
           echo "KUBECONFIG=$env:TEMP\kubeconfig.yaml" >> $env:GITHUB_ENV
         shell: powershell
 
-      # 4. 🚨 แก้ไข: Deploy โดยใช้คำสั่ง kubectl โดยตรง
+      # 4. Deploy โดยใช้คำสั่ง kubectl โดยตรง
       - name: 🚀 Deploy to Kubernetes Cluster (using kubectl)
-        # ใช้ Bash Shell เพื่อให้จัดการการรันคำสั่งหลายบรรทัดได้ง่าย
-        shell: bash
+        shell: powershell  # <-- เปลี่ยนเป็น powershell
         run: |
           # 1. เตรียม Image Tags ที่จะใช้แทนที่ใน Manifests
-          FRONTEND_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:${{ github.sha }}"
-          BACKEND_IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:${{ github.sha }}"
+          $FRONTEND_IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/your-frontend-app:${{ github.sha }}"
+          $BACKEND_IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/your-backend-app:${{ github.sha }}"
           
-          # 2. ทำการ Substitution (แทนที่ Image ใน Deployment YAMLs)
-          # เปลี่ยน image: bofwant5000bath-frontend:latest ให้เป็น image: FULL_DOCKER_PATH:SHA
-          sed -i "s|image: bofwant5000bath-frontend:latest|image: $FRONTEND_IMAGE|g" k8s/frontend-deployment.yaml
-          sed -i "s|image: bofwant5000bath-backend:latest|image: $BACKEND_IMAGE|g" k8s/backend-deployment.yaml
+          Write-Host "--- Performing Image Substitution (PowerShell) ---"
 
-          # 3. รัน kubectl apply บนไฟล์ทั้งหมด
-          # ใช้ -f เพื่อระบุไฟล์ทั้งหมดที่คุณมี
-          kubectl apply -f k8s/mysql-data-persistentvolumeclaim.yaml \
-                        -f k8s/mysql-deployment.yaml \
-                        -f k8s/mysql-service.yaml \
-                        -f k8s/backend-deployment.yaml \
-                        -f k8s/backend-service.yaml \
-                        -f k8s/frontend-deployment.yaml \
+          # 2. ทำการ Substitution (แทนที่ Image ใน Deployment YAMLs)
+          # แทนที่ Frontend
+          $FrontendManifest = Get-Content k8s/frontend-deployment.yaml
+          $FrontendManifest -replace "image: bofwant5000bath-frontend:latest", "image: $FRONTEND_IMAGE" | Set-Content k8s/frontend-deployment.yaml
+
+          # แทนที่ Backend
+          $BackendManifest = Get-Content k8s/backend-deployment.yaml
+          $BackendManifest -replace "image: bofwant5000bath-backend:latest", "image: $BACKEND_IMAGE" | Set-Content k8s/backend-deployment.yaml
+
+          Write-Host "--- Applying Manifests ---"
+          # 3. รัน kubectl apply บนไฟล์ทั้งหมด (ใช้ PowerShell multi-line syntax)
+          kubectl apply -f k8s/mysql-data-persistentvolumeclaim.yaml `
+                        -f k8s/mysql-deployment.yaml `
+                        -f k8s/mysql-service.yaml `
+                        -f k8s/backend-deployment.yaml `
+                        -f k8s/backend-service.yaml `
+                        -f k8s/frontend-deployment.yaml `
                         -f k8s/frontend-service.yaml
 
