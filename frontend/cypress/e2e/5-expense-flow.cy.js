@@ -40,6 +40,18 @@ describe('5. Add Expense Flow - Extended Tests (Images 1-2)', () => {
         "SGD": "Singapore Dollar"
       }
     }).as('getCurrencies');
+    
+    // ⭐⭐ NEW: Mock API อัตราแลกเปลี่ยน (สำหรับ USD -> THB) ⭐⭐
+    // สมมติ 1 USD = 35.00 THB
+    cy.intercept('GET', 'https://api.frankfurter.app/latest?from=USD&to=THB', {
+        statusCode: 200,
+        body: {
+          "amount": 1,
+          "base": "USD",
+          "date": "2025-11-20",
+          "rates": { "THB": 35.00 } // <-- อัตราแลกเปลี่ยนที่ Mock
+        }
+    }).as('getUSDTHBRate');
 
     // Mock API /settle
     cy.intercept('GET', `**/groups/${GROUP_ID}/settle`, {
@@ -135,7 +147,7 @@ describe('5. Add Expense Flow - Extended Tests (Images 1-2)', () => {
       
       // คลิกบันทึก
       cy.contains('button', 'บันทึกค่าใช้จ่าย').click();
-      
+
       // ตรวจสอบว่ามี alert
       cy.get('@alertStub').should('have.been.calledWith', 
         Cypress.sinon.match(/10 หลัก/)
@@ -352,7 +364,7 @@ describe('5. Add Expense Flow - Extended Tests (Images 1-2)', () => {
   // ===========================================
   describe('Receipt Upload Tests', () => {
     
-    it('ควรแสดง preview เมื่ออัปโหลดรูป', () => {
+    it('ควรแสดง preview เมื่อสัปโหลดรูป', () => {
       // อัปโหลดไฟล์
       cy.get('input[type="file"][id="receipt-upload"]')
         .selectFile('cypress/fixtures/test-image.jpg', { force: true });
@@ -381,6 +393,96 @@ describe('5. Add Expense Flow - Extended Tests (Images 1-2)', () => {
       
       // ควรแสดง UI อัปโหลดใหม่
       cy.contains('อัปโหลดไฟล์').should('be.visible');
+    });
+  });
+
+  describe('4. Currency Conversion and Payload Tests (USD -> THB)', () => {
+  
+    it('ควรเปลี่ยนสกุลเงิน, แสดงยอดรวม THB ที่ถูกต้อง และส่ง Payload ที่มีค่าแปลงกลับไปเป็นสกุลเงินต้นทาง', () => {
+      
+      const EXPENSE_AMOUNT = 1000.00; // ยอดเงินต้นทาง (USD) - ใช้ค่า default
+      const EXCHANGE_RATE = 35.00;    // อัตราแลกเปลี่ยนที่ Mock ไว้ (THB/USD)
+      const THB_AMOUNT = EXPENSE_AMOUNT * EXCHANGE_RATE; // 35000.00 THB
+      
+      // 1. Act: เปลี่ยนสกุลเงินเป็น USD
+      cy.get('div.w-40 > select') 
+        .select('USD');
+        
+      // 2. Assert: รอ Mock API โหลด
+      cy.wait('@getUSDTHBRate', { timeout: 10000 });
+
+      // 3. Assert: ยอดเงิน THB ที่แสดงผลต้องถูกต้อง (รองรับจุลภาค)
+      cy.contains('1 USD = 35.0000 THB', { timeout: 10000 }).should('be.visible');
+      cy.contains(/ยอดรวม.*35,?000\.00.*THB/i, { timeout: 10000 }).should('be.visible');
+      
+      // 4. Act: เปลี่ยนวิธีแบ่งเป็น "กำหนดจำนวนเงินเอง" (Custom Split)
+      cy.contains('label', 'กำหนดจำนวนเงินเอง')
+        .find('input[type="radio"]')
+        .check({ force: true });
+        
+      // 5. Act: กรอกข้อมูลพื้นฐานให้ครบ (ใช้ค่า default 1000 USD อยู่แล้ว)
+      cy.get('input[value="ค่าอาหารเย็น"]').clear().type('ค่าใช้จ่าย USD');
+      cy.get('input[placeholder="08xxxxxxxx"]').clear().type('0812345678');
+      
+      // 6. Act: กำหนด Custom Share เป็น THB
+      // ตรวจสอบจำนวนสมาชิกที่ถูกเลือก แล้วแบ่งเท่าๆ กัน
+      const THB_TOTAL = THB_AMOUNT; // 35,000.00 THB
+      
+      // รอให้ส่วน Custom Split โหลดเสร็จ
+      cy.contains('ยอดรวม:', { timeout: 10000 }).should('be.visible');
+      
+      // นับจำนวนสมาชิกที่ถูกเลือก (checked)
+      cy.get('input[type="checkbox"]:checked').then($checkedBoxes => {
+        const memberCount = $checkedBoxes.length;
+        const sharePerPerson = Math.floor((THB_TOTAL / memberCount) * 100) / 100; // ปัดลง
+        const lastPersonShare = (THB_TOTAL - (sharePerPerson * (memberCount - 1))).toFixed(2); // คนสุดท้ายได้ส่วนที่เหลือ
+        
+        // ตั้งค่าส่วนแบ่งของแต่ละคน
+        cy.get('input[type="checkbox"]:checked').each(($checkbox, index) => {
+          const amount = (index === memberCount - 1) ? lastPersonShare : sharePerPerson.toFixed(2);
+          cy.wrap($checkbox)
+            .parent()
+            .parent()
+            .find('input[type="number"]')
+            .first()
+            .clear()
+            .type(amount);
+        });
+      });
+
+      // 7. Assert: ยอดรวม THB ใน Custom Split ต้องตรงกับยอดรวม (35000.00)
+      cy.contains('ยอดรวม:', { timeout: 10000 }).should('be.visible');
+      cy.contains(/฿35,?000\.00/i, { timeout: 10000 }).should('be.visible');
+      // ไม่ตรวจสอบ "เหลือที่ต้องแบ่ง" เพราะอาจไม่แสดงเมื่อยอดครบ 100%
+
+      // 8. Mock API บันทึกบิล
+      cy.intercept('POST', '**/bills/create', {
+        statusCode: 201,
+        body: { billId: 100, message: 'บันทึกสำเร็จ' }
+      }).as('createBill');
+      
+      // 9. Act: บันทึก
+      cy.contains('button', 'บันทึกค่าใช้จ่าย').click();
+
+      // 10. Assert: ตรวจสอบ Payload ที่ถูกส่งไป Backend
+      cy.wait('@createBill').its('request.body').should((payload) => {
+        expect(payload.amount).to.equal(1000.00); 
+        expect(payload.currencyCode).to.equal('USD');
+        expect(payload.exchangeRate).to.equal(EXCHANGE_RATE);
+        
+        // คำนวณยอดที่คาดหวังจากจำนวนสมาชิก
+        const memberCount = payload.participants.length;
+        const expectedAmountPerPerson = 1000.00 / memberCount;
+        
+        // ตรวจสอบว่ายอดรวมของทุกคนเท่ากับ 1000 USD
+        const totalAmount = payload.participants.reduce((sum, p) => sum + p.amount, 0);
+        expect(totalAmount).to.be.closeTo(1000.00, 0.02);
+        
+        // ตรวจสอบแต่ละคนได้ส่วนแบ่งที่ใกล้เคียงกับที่คาดหวัง
+        payload.participants.forEach(participant => {
+          expect(participant.amount).to.be.closeTo(expectedAmountPerPerson, 1);
+        });
+      });
     });
   });
 
