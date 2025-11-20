@@ -109,7 +109,8 @@ jobs:
 
   # This job deploys the built images to the Kubernetes cluster
   deploy-to-kubernetes:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest
+    runs-on: self-hosted       # <-- ใช้ Runner ในเครื่องคุณ
     # กำหนดให้ Job นี้ต้องรอให้ทั้ง Frontend และ Backend Build/Push สำเร็จก่อน
     needs: [build-test-and-publish-frontend, build-test-and-publish-backend] 
     
