@@ -22,20 +22,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // 🔹 ปิด CSRF สำหรับ dev หรือจัดการ CSRF token ใน production
             .csrf(csrf -> csrf.disable())
+            
+            // 🔹 เปิดใช้งาน CORS และใช้ config จาก corsConfigurationSource()
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-            // ใช้ session in-memory ของ Spring Security
+            
+            // 🔹 ตั้งค่า session in-memory
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )
 
+            // 🔹 กำหนดสิทธิ์การเข้าถึง
             .authorizeHttpRequests(auth -> auth
+                // public endpoints
                 .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
+                // อื่นๆ ต้อง authenticated
                 .anyRequest().authenticated()
-            );
+            )
+
+            // 🔹 สำหรับการ login/logout หากต้องการ future
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
 
         return http.build();
     }
@@ -43,6 +53,8 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // 🔹 เพิ่มโดเมน frontend ที่ต้องการเชื่อมต่อ
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:5173",
             "https://bofwant5000bath.zeabur.app",
@@ -51,15 +63,23 @@ public class SecurityConfig {
             "http://192.168.43.227:30080",
             "http://172.20.10.2:30080"
         ));
+
+        // 🔹 อนุญาต method
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // 🔹 อนุญาต header ทุกชนิด
         configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // 🔹 สำคัญมาก! ต้องอนุญาตให้ส่ง Cookie
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 
+    // 🔹 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
