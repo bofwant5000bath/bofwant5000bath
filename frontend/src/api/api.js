@@ -1,10 +1,10 @@
 // frontend/src/api/api.js
 
-import axios from 'axios';
+import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: '/api',           // หรือ https://bofwant5000bath.zeabur.app/api
-  withCredentials: true,     // ✅ ส่ง Cookie ไปกับทุก request
+  baseURL: "https://backend-bofwant5000bath.zeabur.app/api", // backend domain
+  withCredentials: true, // ✅ สำคัญมาก
   headers: {
     "Content-Type": "application/json"
   }
