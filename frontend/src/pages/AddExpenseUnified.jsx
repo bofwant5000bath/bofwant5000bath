@@ -692,7 +692,7 @@ const AddExpenseUnified = () => {
             <i className="material-icons text-gray-600">arrow_back</i>
           </button>
           <h1 className="text-xl font-bold text-gray-800">
-            เพิ่มค่าใช้จ่ายใน "ทริปเที่ยวทะเล"
+            เพิ่มค่าใช้จ่ายใน "กลุ่ม"
           </h1>
         </div>
       </header>
