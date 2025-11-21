@@ -3,11 +3,11 @@ package com.example.backend.controller;
 import com.example.backend.dto.BillDetailDto;
 import com.example.backend.dto.CreateBillRequest;
 import com.example.backend.dto.CreateBillWithTagsRequest;
-import com.example.backend.dto.GroupBillDetailsDto; // เพิ่ม import
-import com.example.backend.dto.UserDto; // เพิ่ม import
+import com.example.backend.dto.GroupBillDetailsDto; 
+import com.example.backend.dto.UserDto; 
 import com.example.backend.model.Bill;
 import com.example.backend.model.BillParticipant;
-import com.example.backend.model.User; // เพิ่ม import
+import com.example.backend.model.User; 
 import com.example.backend.service.BillService;
 import com.example.backend.repository.BillParticipantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/bills")
+@CrossOrigin(origins = "*") // 👈 เติมตรงนี้ครับ
 public class BillController {
 
     private final BillService billService;
@@ -34,16 +35,13 @@ public class BillController {
 
     @GetMapping("/group/{groupId}")
     public ResponseEntity<GroupBillDetailsDto> getBillsByGroup(@PathVariable Integer groupId) {
-        // 1. ดึงรายชื่อสมาชิกในกลุ่ม
         List<User> groupMembers = billService.getGroupMembers(groupId);
         List<UserDto> groupMembersDto = groupMembers.stream()
                 .map(UserDto::new)
                 .collect(Collectors.toList());
 
-        // 2. ดึงรายการบิล (เหมือนเดิม)
         List<Bill> bills = billService.getBillsByGroupId(groupId);
 
-        // 3. แปลง Bill entities เป็น BillDetailDto (โค้ดส่วนนี้จะใช้ DTO ที่คุณมีอยู่แล้วโดยอัตโนมัติ)
         List<BillDetailDto> billDetailDtos = bills.stream()
                 .map(bill -> {
                     List<BillParticipant> participants =
@@ -52,7 +50,6 @@ public class BillController {
                 })
                 .collect(Collectors.toList());
 
-        // 4. สร้าง Response object ใหม่
         GroupBillDetailsDto response = new GroupBillDetailsDto(groupMembersDto, billDetailDtos);
 
         return ResponseEntity.ok(response);
