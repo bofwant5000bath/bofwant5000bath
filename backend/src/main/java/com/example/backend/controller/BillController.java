@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/bills")
-@CrossOrigin(origins = "*") // 👈 เติมตรงนี้ครับ
 public class BillController {
 
     private final BillService billService;
