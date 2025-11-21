@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/api.js';
+import Fuse from 'fuse.js';
 
 const CreateGroup = () => {
   const [groupName, setGroupName] = useState('');
@@ -164,15 +165,48 @@ const CreateGroup = () => {
     }
   };
 
-  // สร้าง list ของ user ที่ผ่านการกรอง (สำหรับ Tab "เพื่อน")
-  const filteredUsers = allUsers.filter(user =>
-    user.fullName.toLowerCase().includes(friendSearchTerm.toLowerCase())
-  );
+  // // สร้าง list ของ user ที่ผ่านการกรอง (สำหรับ Tab "เพื่อน")
+  // const filteredUsers = allUsers.filter(user =>
+  //   user.fullName.toLowerCase().includes(friendSearchTerm.toLowerCase())
+  // );
 
-  // สร้าง list ของ group ที่ผ่านการกรอง (สำหรับ Tab "กลุ่ม")
-  const filteredGroups = allGroups.filter(group =>
-    group.groupName.toLowerCase().includes(groupSearchTerm.toLowerCase())
-  );
+  // // สร้าง list ของ group ที่ผ่านการกรอง (สำหรับ Tab "กลุ่ม")
+  // const filteredGroups = allGroups.filter(group =>
+  //   group.groupName.toLowerCase().includes(groupSearchTerm.toLowerCase())
+  // );
+
+  // 1. ตั้งค่า Fuse สำหรับ User (ทำแค่ครั้งเดียวเมื่อ allUsers เปลี่ยน)
+  const fuseUsers = useMemo(() => {
+    return new Fuse(allUsers, {
+      keys: ['fullName'], // ค้นหาจากชื่อ
+      threshold: 0.4,     // ความยืดหยุ่น (0.4 คือกำลังดีสำหรับชื่อคน)
+      includeScore: true
+    });
+  }, [allUsers]);
+
+  // 2. Logic การกรอง users (ใช้ Fuse)
+  const filteredUsers = useMemo(() => {
+    if (!friendSearchTerm) {
+      return allUsers; // ถ้าไม่พิมพ์อะไร ให้แสดงทั้งหมด
+    }
+    const results = fuseUsers.search(friendSearchTerm);
+    return results.map(result => result.item); 
+  }, [friendSearchTerm, allUsers, fuseUsers]);
+
+
+  // 3. ตั้งค่า Fuse สำหรับ Group
+  const fuseGroups = useMemo(() => {
+    return new Fuse(allGroups, {
+      keys: ['groupName'],
+      threshold: 0.4,
+    });
+  }, [allGroups]);
+
+  // 4. Logic การกรอง groups (ใช้ Fuse)
+  const filteredGroups = useMemo(() => {
+    if (!groupSearchTerm) return allGroups;
+    return fuseGroups.search(groupSearchTerm).map(result => result.item);
+  }, [groupSearchTerm, allGroups, fuseGroups]);
 
   // ดึงข้อมูล User (จาก allUsers) เพื่อมาแสดงใน "เพื่อนที่เลือก"
   const selectedUserDetails = allUsers.filter(user => 
