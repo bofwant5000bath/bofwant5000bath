@@ -6,22 +6,16 @@ const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook สำหรับการเปลี่ยนหน้า
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       // เรียกใช้งาน API สำหรับการเข้าสู่ระบบ
-      const response = await apiClient.post(
-        '/auth/login',
-        {
-          username,
-          password,
-        },
-        {
-          withCredentials: true, // ✅ สำคัญมาก สำหรับ cross-site Cookie
-        }
-      );
+      const response = await apiClient.post('/auth/login', {
+        username,
+        password,
+      });
 
       // จัดการเมื่อเข้าสู่ระบบสำเร็จ
       console.log('เข้าสู่ระบบสำเร็จ:', response.data);
@@ -29,7 +23,7 @@ const Login = () => {
       // จัดเก็บข้อมูลผู้ใช้ที่จำเป็นลงใน localStorage
       localStorage.setItem('user_id', response.data.user_id);
       localStorage.setItem('full_name', response.data.full_name);
-
+      // หาก backend ส่ง profile_picture_url มาด้วย ให้บันทึกไว้
       if (response.data.profile_picture_url) {
         localStorage.setItem('profile_picture_url', response.data.profile_picture_url);
       }
@@ -41,7 +35,8 @@ const Login = () => {
       
     } catch (err) {
       // จัดการเมื่อเกิดข้อผิดพลาด
-      setError(err.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      // แสดงข้อความผิดพลาดที่กำหนดไว้ใน Backend หรือข้อความเริ่มต้น
+      setError(err.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'); 
       console.error('Error logging in:', err);
     }
   };
@@ -57,7 +52,10 @@ const Login = () => {
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="username">
+            <label
+              className="block text-gray-700 text-sm font-semibold mb-2"
+              htmlFor="username"
+            >
               ชื่อผู้ใช้
             </label>
             <div className="relative">
@@ -78,7 +76,10 @@ const Login = () => {
           </div>
           
           <div>
-            <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="password">
+            <label
+              className="block text-gray-700 text-sm font-semibold mb-2"
+              htmlFor="password"
+            >
               รหัสผ่าน
             </label>
             <div className="relative">
@@ -108,7 +109,10 @@ const Login = () => {
 
         <p className="text-center text-gray-500 text-sm mt-6">
           ยังไม่มีบัญชี?{' '}
-          <Link className="text-blue-500 hover:text-blue-700 font-semibold" to="/register">
+          <Link
+            className="text-blue-500 hover:text-blue-700 font-semibold"
+            to="/register"
+          >
             ลงทะเบียนที่นี่
           </Link>
         </p>
