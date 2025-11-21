@@ -10,6 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "*") // 👈 เติมแค่อันนี้ครับ (อนุญาตให้ Frontend ทุกที่เข้าได้)
 public class AuthController {
 
     private final UserService userService;
@@ -30,7 +31,7 @@ public class AuthController {
                     response.put("user_id", user.getUserId());
                     response.put("username", user.getUsername());
                     response.put("full_name", user.getFullName());
-                    response.put("profile_picture_url", user.getProfilePictureUrl()); // ✅ ยอมให้ null ได้
+                    response.put("profile_picture_url", user.getProfilePictureUrl()); 
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.status(401).body(Map.of("message", "Invalid credentials")));
@@ -39,7 +40,6 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User userRequest) {
         try {
-            // ดึงค่าจาก body
             String username = userRequest.getUsername();
             String password = userRequest.getPassword();
             String fullName = userRequest.getFullName();
