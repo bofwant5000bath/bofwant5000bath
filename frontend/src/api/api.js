@@ -1,12 +1,9 @@
 // frontend/src/api/api.js
-
 import axios from 'axios';
 
-// 1. สร้าง "ตู้สาขา" กลางขึ้นมา
 const apiClient = axios.create({
-  // 2. ตั้งค่าเบอร์หลักของบริษัทไว้ที่นี่ที่เดียว
-  baseURL: '/api'
+  // ถ้ามี Env VITE_API_URL ให้ใช้ (บน Cloud) ถ้าไม่มีให้ใช้ localhost (เครื่องเรา)
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api' 
 });
 
-// 3. ส่งออก "ตู้สาขา" นี้เพื่อให้ไฟล์อื่นนำไปใช้
 export default apiClient;
