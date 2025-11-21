@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/groups")
-@CrossOrigin(origins = "*") // 👈 เติมตรงนี้ครับ
 public class GroupController {
 
     private final UserService userService;
