@@ -5,12 +5,11 @@ import com.example.backend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // 👈 เติมแค่อันนี้ครับ (อนุญาตให้ Frontend ทุกที่เข้าได้)
+// ❌ เอา @CrossOrigin ออก (ใช้ CorsConfig ตัวเดียวพอ)
 public class AuthController {
 
     private final UserService userService;
@@ -31,7 +30,7 @@ public class AuthController {
                     response.put("user_id", user.getUserId());
                     response.put("username", user.getUsername());
                     response.put("full_name", user.getFullName());
-                    response.put("profile_picture_url", user.getProfilePictureUrl()); 
+                    response.put("profile_picture_url", user.getProfilePictureUrl());
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.status(401).body(Map.of("message", "Invalid credentials")));
