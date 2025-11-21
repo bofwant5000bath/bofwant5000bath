@@ -1,6 +1,6 @@
 package com.example.backend.config;
 
-import org.springframework.beans.factory.annotation.Value; // เพิ่ม import นี้
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -9,8 +9,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig {
 
-    // อ่านค่าจาก Env Var ชื่อ FRONTEND_URL ถ้าไม่มีให้ใช้ * (อนุญาตหมด)
-    @Value("${FRONTEND_URL:*}")
+    // อ่านค่าจาก Env Variable ชื่อ FRONTEND_URL
+    // ถ้าไม่มี (เช่นรัน Local) ให้ใช้ค่า Default เป็น http://localhost:5173
+    @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
 
     @Bean
@@ -18,11 +19,14 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
+                // แยก URL ด้วยเครื่องหมาย comma (,) กรณีมีหลาย Domain
+                String[] allowedOrigins = frontendUrl.split(",");
+                
                 registry.addMapping("/**")
-                        .allowedOrigins(frontendUrl.split(",")) // รองรับการใส่หลาย URL คั่นด้วย comma
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // เพิ่ม OPTIONS สำคัญมาก
+                        .allowedOrigins(allowedOrigins)
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // เพิ่ม OPTIONS
                         .allowedHeaders("*")
-                        .allowCredentials(true); // ถ้ามีการส่ง Cookie/Auth ต้องเปิดตัวนี้
+                        .allowCredentials(true);
             }
         };
     }
