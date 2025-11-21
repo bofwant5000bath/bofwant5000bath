@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = "*") // 👈 เติมตรงนี้ครับ
 public class PaymentController {
 
     private final PaymentService paymentService;
