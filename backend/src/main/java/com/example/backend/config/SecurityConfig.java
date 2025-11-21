@@ -22,30 +22,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 🔹 ปิด CSRF สำหรับ dev หรือจัดการ CSRF token ใน production
+            // ปิด CSRF (สำหรับ API ที่ใช้ frontend แยก domain)
             .csrf(csrf -> csrf.disable())
-            
-            // 🔹 เปิดใช้งาน CORS และใช้ config จาก corsConfigurationSource()
+
+            // เปิด CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // 🔹 ตั้งค่า session in-memory
+
+            // ใช้ session ของ Spring Security (in-memory)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             )
 
-            // 🔹 กำหนดสิทธิ์การเข้าถึง
+            // กำหนดสิทธิ์การเข้าถึง
             .authorizeHttpRequests(auth -> auth
-                // public endpoints
                 .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
                 .requestMatchers("/error").permitAll()
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // CORS preflight
-                // อื่นๆ ต้อง authenticated
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
-            )
-
-            // 🔹 สำหรับการ login/logout หากต้องการ future
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
+            );
 
         return http.build();
     }
@@ -53,33 +47,24 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // 🔹 เพิ่มโดเมน frontend ที่ต้องการเชื่อมต่อ
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",
-            "https://bofwant5000bath.zeabur.app",
+            "https://bofwant5000bath.zeabur.app",  // frontend
+            "http://localhost:5173",                // local dev
             "http://localhost:30080",
             "http://192.168.43.60:30080",
             "http://192.168.43.227:30080",
             "http://172.20.10.2:30080"
         ));
-
-        // 🔹 อนุญาต method
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // 🔹 อนุญาต header ทุกชนิด
         configuration.setAllowedHeaders(Arrays.asList("*"));
-
-        // 🔹 สำคัญมาก! ต้องอนุญาตให้ส่ง Cookie
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true); // ✅ ส่ง cookie ไป backend
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Set-Cookie"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
     }
 
-    // 🔹 Password encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
