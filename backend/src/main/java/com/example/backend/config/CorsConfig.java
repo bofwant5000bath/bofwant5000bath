@@ -9,9 +9,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig {
 
-    // อ่านค่าจาก Env Variable ชื่อ FRONTEND_URL
-    // ถ้าไม่มี (เช่นรัน Local) ให้ใช้ค่า Default เป็น http://localhost:5173
-    @Value("${FRONTEND_URL:http://localhost:5173}")
+    // อ่านค่าจาก Env Variable (ใน Zeabur)
+    // ถ้าไม่มี ให้ใช้ * (อนุญาตทั้งหมด)
+    @Value("${FRONTEND_URL:*}")
     private String frontendUrl;
 
     @Bean
@@ -19,14 +19,13 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                // แยก URL ด้วยเครื่องหมาย comma (,) กรณีมีหลาย Domain
-                String[] allowedOrigins = frontendUrl.split(",");
-                
                 registry.addMapping("/**")
-                        .allowedOrigins(allowedOrigins)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // เพิ่ม OPTIONS
+                        // ✅ แก้จุดตาย: ใช้ allowedOriginPatterns แทน allowedOrigins
+                        // เพื่อให้ใช้ "*" คู่กับ allowCredentials(true) ได้โดยไม่ Error
+                        .allowedOriginPatterns(frontendUrl.split(","))
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true); // อนุญาตให้ส่ง Cookies/Auth Headers
             }
         };
     }
